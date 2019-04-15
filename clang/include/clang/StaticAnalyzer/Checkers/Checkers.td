@@ -340,6 +340,10 @@ def EnumCastOutOfRangeChecker : Checker<"EnumCastOutOfRange">,
   HelpText<"Check integer to enumeration casts for out of range values">,
   Documentation<HasAlphaDocumentation>;
 
+def InefficientContainerChecker : Checker<"InefficientContainer">,
+  HelpText<"Check inefficient STL container usages">,
+  Documentation<HasAlphaDocumentation>;
+
 def InvalidatedIteratorChecker : Checker<"InvalidatedIterator">,
   HelpText<"Check for use of invalidated iterators">,
   Documentation<HasAlphaDocumentation>;

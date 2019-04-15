@@ -40,6 +40,10 @@ add_clang_library(clangStaticAnalyzerCheckers
   GenericTaintChecker.cpp
   GTestChecker.cpp
   IdenticalExprChecker.cpp
+  InefficientContainerChecker/ContainerUsageStatisticsCallback.cpp
+  InefficientContainerChecker/ContainerUsageStatisticsCallback.h
+  InefficientContainerChecker/InefficientContainerChecker.cpp
+  InefficientContainerChecker/InefficientContainerChecker.h
   InnerPointerChecker.cpp
   IteratorChecker.cpp
   IvarInvalidationChecker.cpp
