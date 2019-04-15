@@ -29,7 +29,14 @@ public:
   void checkASTCodeBody(const Decl *D, AnalysisManager &AM, BugReporter &BR) const;
 
 private:
-  void registerMatchers(ast_matchers::MatchFinder& Finder, ContainerUsageStatisticsCallback* CB) const;
+  enum class OperationType {
+          Add,
+          Read,
+          Update,
+          Delete
+  };
+
+  void registerContainerMatchers(ast_matchers::MatchFinder& Finder, ContainerUsageStatisticsCallback* CB) const;
   void check(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 

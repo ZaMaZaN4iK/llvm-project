@@ -1,4 +1,4 @@
-//===- ContainerUsageStatisticsCallback.cpp -------------------------*- C++ -*-==//
+//===- ContainerUsageStatisticsStore.cpp -------------------------*- C++ -*-==//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,17 +7,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "ContainerUsageStatisticsCallback.h"
+#include "ContainerUsageStatisticsStore.h"
 
 namespace clang {
 namespace ento {
 namespace inefficientcontainer {
 
-
-void ContainerUsageStatisticsCallback::run(const ast_matchers::MatchFinder::MatchResult& Result)
-{
-
-}
 
 
 } // namespace inefficientcontainer

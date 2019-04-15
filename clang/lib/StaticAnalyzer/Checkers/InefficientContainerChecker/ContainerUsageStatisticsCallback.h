@@ -10,6 +10,8 @@
 #ifndef LLVM_CONTAINERUSAGESTATISTICSCALLBACK_H
 #define LLVM_CONTAINERUSAGESTATISTICSCALLBACK_H
 
+#include "HelperTypes.h"
+
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/StaticAnalyzer/Core/BugReporter/BugReporter.h"
 
@@ -27,11 +29,15 @@ class ContainerUsageStatisticsCallback : public ast_matchers::MatchFinder::Match
 
 public:
     ContainerUsageStatisticsCallback(const InefficientContainerChecker* C,
-                                     BugReporter& BR, AnalysisDeclContext* ADC)
-            : C(C), BR(BR), ADC(ADC)
+                                     BugReporter& BR, AnalysisDeclContext* ADC,
+                                     CandidateStorage &Storage)
+            : C(C), BR(BR), ADC(ADC), Storage(Storage)
     {}
 
-    virtual void run(const ast_matchers::MatchFinder::MatchResult& Result);
+    void run(const ast_matchers::MatchFinder::MatchResult& Result) override;
+
+private:
+    CandidateStorage& Storage;
 };
 
 } // namespace inefficientcontainer

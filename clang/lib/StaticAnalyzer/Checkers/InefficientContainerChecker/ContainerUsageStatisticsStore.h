@@ -1,4 +1,4 @@
-//===- ContainerUsageStatisticsCallback.cpp -------------------------*- C++ -*-==//
+//===- ContainerUsageStatisticsStore.h -------------------------*- C++ -*-==//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -6,20 +6,23 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+#ifndef LLVM_CONTAINERUSAGESTATISTICSSTORE_H
+#define LLVM_CONTAINERUSAGESTATISTICSSTORE_H
 
-#include "ContainerUsageStatisticsCallback.h"
+#include "HelperTypes.h"
 
 namespace clang {
 namespace ento {
 namespace inefficientcontainer {
 
-
-void ContainerUsageStatisticsCallback::run(const ast_matchers::MatchFinder::MatchResult& Result)
+class ContainerUsageStatisticsStore
 {
+public:
 
-}
-
+};
 
 } // namespace inefficientcontainer
 } // namespace ento
 } // namespace clang
+
+#endif //LLVM_CONTAINERUSAGESTATISTICSSTORE_H

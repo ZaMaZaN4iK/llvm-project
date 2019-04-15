@@ -42,6 +42,9 @@ add_clang_library(clangStaticAnalyzerCheckers
   IdenticalExprChecker.cpp
   InefficientContainerChecker/ContainerUsageStatisticsCallback.cpp
   InefficientContainerChecker/ContainerUsageStatisticsCallback.h
+  InefficientContainerChecker/ContainerUsageStatisticsStore.cpp
+  InefficientContainerChecker/ContainerUsageStatisticsStore.h
+  InefficientContainerChecker/HelperTypes.h
   InefficientContainerChecker/InefficientContainerChecker.cpp
   InefficientContainerChecker/InefficientContainerChecker.h
   InnerPointerChecker.cpp

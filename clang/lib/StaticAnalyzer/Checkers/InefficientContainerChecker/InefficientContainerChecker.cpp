@@ -10,6 +10,7 @@
 #include "InefficientContainerChecker.h"
 
 #include "ContainerUsageStatisticsCallback.h"
+#include "HelperTypes.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
@@ -53,8 +54,8 @@ ListMatcher getVectorTypeMatcher() {
                             qualType().bind(VectorType)))))))));
 }
 
-void InefficientContainerChecker::registerMatchers(ast_matchers::MatchFinder& Finder,
-                                                   ContainerUsageStatisticsCallback* CB) const {
+void InefficientContainerChecker::registerContainerMatchers(ast_matchers::MatchFinder& Finder,
+                                                            ContainerUsageStatisticsCallback* CB) const {
   Finder.addMatcher(
       declStmt(
           hasDescendant(
@@ -96,9 +97,11 @@ void InefficientContainerChecker::registerMatchers(ast_matchers::MatchFinder& Fi
 }
 
 void InefficientContainerChecker::check(const MatchFinder::MatchResult &Result) {
-  const auto *MatchedVector = Result.Nodes.getNodeAs<DeclStmt>(Vector);
-  const auto *MatchedVectorDecl = Result.Nodes.getNodeAs<VarDecl>(VectorDecl);
-  const auto *MatchedVectorType = Result.Nodes.getNodeAs<QualType>(VectorType);
+  const auto MatchedVector = *Result.Nodes.getNodeAs<DeclStmt>(Vector);
+  const auto MatchedVectorDecl = *Result.Nodes.getNodeAs<VarDecl>(VectorDecl);
+
+
+/*  const auto *MatchedVectorType = Result.Nodes.getNodeAs<QualType>(VectorType);
   const auto *MatchedVectorSize = Result.Nodes.getNodeAs<Expr>(VectorSize);
 
   const auto *MatchedList = Result.Nodes.getNodeAs<DeclStmt>(List);
@@ -111,9 +114,9 @@ void InefficientContainerChecker::check(const MatchFinder::MatchResult &Result) 
     const std::string insertion = "std::forward_list<" +
                                   MatchedListType->getAsString() + "> " +
                                   MatchedListDecl->getName().str() + ";";
-    /*diag(MatchedList->getBeginLoc(), "use std::forward_list instead")
+    *//*diag(MatchedList->getBeginLoc(), "use std::forward_list instead")
         << MatchedList->getSingleDecl()->getDeclKindName()
-        << FixItHint::CreateInsertion(MatchedList->getBeginLoc(), insertion);*/
+        << FixItHint::CreateInsertion(MatchedList->getBeginLoc(), insertion);*//*
   } else if (MatchedVector) {
     llvm::APSInt result;
     if(MatchedVectorSize->isIntegerConstantExpr(result, *Result.Context))
@@ -121,22 +124,26 @@ void InefficientContainerChecker::check(const MatchFinder::MatchResult &Result) 
         const std::string insertion =
                 "std::array<" + MatchedVectorType->getAsString() + ", " +
                 result.toString(10) + "> " + MatchedVectorDecl->getName().str() + ";";
-        /*diag(MatchedVector->getBeginLoc(), "use std::array instead")
+        *//*diag(MatchedVector->getBeginLoc(), "use std::array instead")
                 << MatchedVector->getSingleDecl()->getDeclKindName()
-                << FixItHint::CreateInsertion(MatchedVector->getBeginLoc(), insertion);*/
+                << FixItHint::CreateInsertion(MatchedVector->getBeginLoc(), insertion);*//*
     }
-  }
+  }*/
 }
 
 void InefficientContainerChecker::checkASTCodeBody(const Decl *D,
                                                      AnalysisManager &AM,
                                                      BugReporter &BR) const {
-    MatchFinder F;
-    ContainerUsageStatisticsCallback CB(this, BR, AM.getAnalysisDeclContext(D));
+    MatchFinder PossiblyInefficientContainersCollector;
 
-    registerMatchers(F, &CB);
+    CandidateStorage Storage;
+    ContainerUsageStatisticsCallback CB(this, BR, AM.getAnalysisDeclContext(D), Storage);
+    registerContainerMatchers(PossiblyInefficientContainersCollector, &CB);
+    PossiblyInefficientContainersCollector.match(*D->getBody(), AM.getASTContext());
 
-    F.match(*D->getBody(), AM.getASTContext());
+
+
+
 }
 
 } // namespace inefficientcontainer
