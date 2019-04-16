@@ -18,6 +18,7 @@
 #include "clang/StaticAnalyzer/Checkers/BuiltinCheckerRegistration.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h"
 
+#include <iostream>
 #include <string>
 
 using namespace clang::ast_matchers;
@@ -35,6 +36,8 @@ constexpr char List[] = "list";
 constexpr char ListDecl[] = "listDecl";
 constexpr char ListType[] = "listType";
 constexpr char ListCompStmt[] = "listCompStmt";
+
+constexpr char VarDecl[] = "VarDecl";
 
 using ListMatcher = ast_matchers::internal::BindableMatcher<QualType>;
 
@@ -56,7 +59,9 @@ ListMatcher getVectorTypeMatcher() {
 
 void InefficientContainerChecker::registerContainerMatchers(ast_matchers::MatchFinder& Finder,
                                                             ContainerUsageStatisticsCallback* CB) const {
-  Finder.addMatcher(
+    Finder.addMatcher(varDecl(hasType(anyOf(getVectorTypeMatcher()
+                                            ))).bind(VarDecl));
+  /*Finder.addMatcher(
       declStmt(
           hasDescendant(
               varDecl(hasType(getVectorTypeMatcher()),
@@ -93,7 +98,7 @@ void InefficientContainerChecker::registerContainerMatchers(ast_matchers::MatchF
                                            )))
                   .bind(ListCompStmt)))
           .bind(List),
-      CB);
+      CB);*/
 }
 
 void InefficientContainerChecker::check(const MatchFinder::MatchResult &Result) {
