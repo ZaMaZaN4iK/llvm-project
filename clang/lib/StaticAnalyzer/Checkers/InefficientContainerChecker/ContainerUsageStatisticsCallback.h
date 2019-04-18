@@ -40,6 +40,25 @@ private:
     CandidateStorage& Storage;
 };
 
+class OperationStatisticsCallback : public ast_matchers::MatchFinder::MatchCallback
+{
+    const InefficientContainerChecker* C;
+    BugReporter& BR;
+    AnalysisDeclContext* ADC;
+
+public:
+    OperationStatisticsCallback(const InefficientContainerChecker* C,
+                                     BugReporter& BR, AnalysisDeclContext* ADC,
+                                     CandidateStorage &Storage)
+            : C(C), BR(BR), ADC(ADC), Storage(Storage)
+    {}
+
+    void run(const ast_matchers::MatchFinder::MatchResult& Result) override;
+
+private:
+    CandidateStorage& Storage;
+};
+
 } // namespace inefficientcontainer
 } // namespace ento
 } // namespace clang
