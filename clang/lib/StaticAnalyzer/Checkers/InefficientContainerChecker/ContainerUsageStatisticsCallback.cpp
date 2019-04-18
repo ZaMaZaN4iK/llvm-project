@@ -16,13 +16,17 @@ namespace inefficientcontainer {
 
 void ContainerUsageStatisticsCallback::run(const ast_matchers::MatchFinder::MatchResult& Result)
 {
-    auto MatchedNode = Result.Nodes.getMap().find("VarDecl")->second;
+    auto MatchedNode = Result.Nodes.getMap().find(VariableDeclaration)->second;
 
     // Initialize node. Have to be incapsulated somehow
-    std::unordered_map<OperationType, std::size_t> value = {{ OperationType::Add, 0 },
-                                                            {OperationType::Read, 0},
-                                                            {OperationType::Update, 0},
-                                                            {OperationType::Delete, 0}};
+    std::unordered_map<OperationType, std::size_t> value = {{ OperationType::Add_Begin, 0 },
+                                                            { OperationType::Add_Middle, 0 },
+                                                            { OperationType::Add_End, 0 },
+                                                            { OperationType::Read, 0 },
+                                                            { OperationType::Update, 0 },
+                                                            { OperationType::Delete_Begin, 0 },
+                                                            { OperationType::Delete_Middle, 0 },
+                                                            { OperationType::Delete_End, 0 }};
     Storage.insert(std::make_pair(MatchedNode, value));
 }
 
@@ -36,14 +40,9 @@ void OperationStatisticsCallback::run(const ast_matchers::MatchFinder::MatchResu
         auto it = Storage.find(node);
         if(it != Storage.end())
         {
-           it->second[OperationType::Add]++;
+           it->second[OperationType::Add_Begin]++;
         }
     }
-
-
-    // Initialize node. Have to be incapsulated somehow
-
-    //Storage.insert(std::make_pair(MatchedNode, value));
 }
 
 } // namespace inefficientcontainer

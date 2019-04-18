@@ -19,12 +19,20 @@ namespace clang {
 namespace ento {
 namespace inefficientcontainer {
 
+static constexpr char VariableDeclaration[] = "VarDecl";
+
 enum class OperationType {
-    Add,
+    Add_Begin,
+    Add_Middle,
+    Add_End,
     Read,
     Update,
-    Delete
+    Delete_Begin,
+    Delete_Middle,
+    Delete_End
 };
+
+std::string OperationTypeToString(const OperationType opType);
 
 using CandidateStorage = std::map<clang::ast_type_traits::DynTypedNode,
     std::unordered_map<OperationType, std::size_t>>;

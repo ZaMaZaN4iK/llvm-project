@@ -41,6 +41,31 @@ constexpr char VarDecl[] = "VarDecl";
 
 using ListMatcher = ast_matchers::internal::BindableMatcher<QualType>;
 
+std::string OperationTypeToString(const OperationType opType)
+{
+    switch (opType)
+    {
+        case OperationType::Add_Begin:
+            return "AddBegin";
+        case OperationType::Add_Middle:
+            return "AddMiddle";
+        case OperationType::Add_End:
+            return "AddEnd";
+        case OperationType::Read:
+            return "Read";
+        case OperationType::Update:
+            return "Update";
+        case OperationType::Delete_Begin:
+            return "DeleteBegin";
+        case OperationType::Delete_Middle:
+            return "DeleteMiddle";
+        case OperationType::Delete_End:
+            return "DeleteEnd";
+        default:
+            return "";
+    }
+}
+
 ListMatcher getListTypeMatcher() {
   return qualType(hasUnqualifiedDesugaredType(
       recordType(hasDeclaration(classTemplateSpecializationDecl(
@@ -50,21 +75,66 @@ ListMatcher getListTypeMatcher() {
 }
 
 ListMatcher getVectorTypeMatcher() {
-    return qualType(hasUnqualifiedDesugaredType(recordType(hasDeclaration(classTemplateSpecializationDecl(hasName("::std::vector"),hasTemplateArgument(0, templateArgument(refersToType(qualType().bind(VectorType)))))))));
+    return qualType(hasUnqualifiedDesugaredType(
+            recordType(hasDeclaration(classTemplateSpecializationDecl(
+                    hasName("::std::vector"),
+                    hasTemplateArgument(0, templateArgument(refersToType(
+                            qualType().bind(VectorType)))))))));
 }
 
 void InefficientContainerChecker::registerContainerMatchers(ast_matchers::MatchFinder& Finder,
                                                             ContainerUsageStatisticsCallback* CB) const {
-    Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getVectorTypeMatcher())).bind(VarDecl))), CB);
+    Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getVectorTypeMatcher())).bind(VariableDeclaration))), CB);
+    Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getListTypeMatcher())).bind(VariableDeclaration))), CB);
 }
 
 void InefficientContainerChecker::registerOperationMatchers(ast_matchers::MatchFinder& Finder,
                                                             OperationStatisticsCallback* CB) const {
+
+    // Add operations
     Finder.addMatcher(
             stmt(forEachDescendant(cxxMemberCallExpr(
-                                    on(declRefExpr(hasDeclaration(varDecl().bind("VectorDecl")))),
-                                    callee(cxxMethodDecl(anyOf(hasName("push_back"), hasName("insert"), hasName("emplace"))))).bind("Op"))),
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl(anyOf(hasName("push_front"), hasName("emplace_front"))))).
+                    bind(OperationTypeToString(OperationType::Add_Begin)))),
             CB);
+
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                                    callee(cxxMethodDecl(anyOf(hasName("insert"), hasName("emplace"))))).
+                                    bind(OperationTypeToString(OperationType::Add_Middle)))),
+            CB);
+
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl(anyOf(hasName("push_back"), hasName("emplace_back"))))).
+                    bind(OperationTypeToString(OperationType::Add_End)))),
+            CB);
+
+    // Delete operations
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl(hasName("pop_front")))).
+                    bind(OperationTypeToString(OperationType::Delete_Begin)))),
+            CB);
+
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl(hasName("erase")))).
+                    bind(OperationTypeToString(OperationType::Delete_Middle)))),
+            CB);
+
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl(hasName("pop_back")))).
+                    bind(OperationTypeToString(OperationType::Delete_End)))),
+            CB);
+
 }
 
 
@@ -85,7 +155,6 @@ void InefficientContainerChecker::checkASTCodeBody(const Decl *D,
     OperationStatisticsCallback CBO(this, BR, AM.getAnalysisDeclContext(D), Storage);
     registerOperationMatchers(OperationCollector, &CBO);
     OperationCollector.match(*D->getBody(), AM.getASTContext());
-
 }
 
 } // namespace inefficientcontainer
