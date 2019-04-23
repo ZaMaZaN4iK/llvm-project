@@ -61,6 +61,8 @@ std::string OperationTypeToString(const OperationType opType)
             return "DeleteMiddle";
         case OperationType::Delete_End:
             return "DeleteEnd";
+        case OperationType::Other:
+            return "Other";
         default:
             return "";
     }
@@ -150,7 +152,7 @@ void InefficientContainerChecker::checkASTCodeBody(const Decl *D,
     registerContainerMatchers(PossiblyInefficientContainersCollector, &CB);
     PossiblyInefficientContainersCollector.match(*D->getBody(), AM.getASTContext());
 
-    // Collect an informations about performed operations on the containers
+    // Collect information about performed operations on the containers
     MatchFinder OperationCollector;
     OperationStatisticsCallback CBO(this, BR, AM.getAnalysisDeclContext(D), Storage);
     registerOperationMatchers(OperationCollector, &CBO);

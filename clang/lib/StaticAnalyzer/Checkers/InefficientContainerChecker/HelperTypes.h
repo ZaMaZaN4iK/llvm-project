@@ -29,7 +29,8 @@ enum class OperationType {
     Update,
     Delete_Begin,
     Delete_Middle,
-    Delete_End
+    Delete_End,
+    Other
 };
 
 std::string OperationTypeToString(const OperationType opType);
