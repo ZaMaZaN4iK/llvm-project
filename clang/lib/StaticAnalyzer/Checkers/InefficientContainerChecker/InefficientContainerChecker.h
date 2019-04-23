@@ -31,6 +31,7 @@ public:
 private:
   void registerContainerMatchers(ast_matchers::MatchFinder& Finder, ContainerUsageStatisticsCallback* CB) const;
   void registerOperationMatchers(ast_matchers::MatchFinder& Finder, OperationStatisticsCallback* CB) const;
+  void analyze(const CandidateStorage& storage, BugReporter &BR, AnalysisManager &AM) const;
 };
 
 } // namespace inefficientcontainer

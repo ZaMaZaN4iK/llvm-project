@@ -37,7 +37,6 @@ constexpr char ListDecl[] = "listDecl";
 constexpr char ListType[] = "listType";
 constexpr char ListCompStmt[] = "listCompStmt";
 
-constexpr char VarDecl[] = "VarDecl";
 
 using ListMatcher = ast_matchers::internal::BindableMatcher<QualType>;
 
@@ -157,6 +156,34 @@ void InefficientContainerChecker::checkASTCodeBody(const Decl *D,
     OperationStatisticsCallback CBO(this, BR, AM.getAnalysisDeclContext(D), Storage);
     registerOperationMatchers(OperationCollector, &CBO);
     OperationCollector.match(*D->getBody(), AM.getASTContext());
+
+    // Start container efficiency analysis
+    analyze(Storage, BR, AM);
+}
+
+void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugReporter &BR, AnalysisManager &AM) const
+{
+    for(const auto& VariableDeclaration : storage)
+    {
+        const auto& OperationOnVariable = VariableDeclaration.second;
+        if(OperationOnVariable.find(OperationType::Add_Begin)->second +
+           OperationOnVariable.find(OperationType::Add_Middle)->second <
+           OperationOnVariable.find(OperationType::Add_End)->second)
+        {
+            const auto wrongDecl = VariableDeclaration.first.get<VarDecl>();
+
+            //Wrong matched variable declaration
+            if(wrongDecl == nullptr)
+            {
+                continue;
+            }
+
+            BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
+                    "Found inefficient container usage",
+                    PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
+                            AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
+        }
+    }
 }
 
 } // namespace inefficientcontainer
