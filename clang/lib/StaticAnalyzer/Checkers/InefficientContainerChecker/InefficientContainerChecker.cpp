@@ -27,15 +27,9 @@ namespace clang {
 namespace ento {
 namespace inefficientcontainer {
 
-constexpr char Vector[] = "vector";
-constexpr char VectorDecl[] = "vectorDecl";
 constexpr char VectorType[] = "vectorType";
-constexpr char VectorSize[] = "vectorSize";
 
-constexpr char List[] = "list";
-constexpr char ListDecl[] = "listDecl";
 constexpr char ListType[] = "listType";
-constexpr char ListCompStmt[] = "listCompStmt";
 
 
 using ListMatcher = ast_matchers::internal::BindableMatcher<QualType>;
@@ -167,6 +161,13 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
     {
         const auto& OperationOnVariable = VariableDeclaration.second;
 
+        const auto wrongDecl = VariableDeclaration.first.get<VarDecl>();
+        // Wrong matched variable declaration
+        if(wrongDecl == nullptr)
+        {
+            continue;
+        }
+
         // If we found other operations - disable analysis because of possible false positives
         if(OperationOnVariable.find(OperationType::Other)->second > 0)
         {
@@ -174,18 +175,24 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
         }
 
 
+        if(OperationOnVariable.find(OperationType::Add_Begin)->second == 0 &&
+           OperationOnVariable.find(OperationType::Add_Middle)->second == 0 &&
+           OperationOnVariable.find(OperationType::Add_End)->second == 0 &&
+           OperationOnVariable.find(OperationType::Delete_Begin)->second == 0 &&
+           OperationOnVariable.find(OperationType::Delete_Middle)->second == 0 &&
+           OperationOnVariable.find(OperationType::Delete_End)->second == 0 &&
+           OperationOnVariable.find(OperationType::Other)->second == 0)
+        {
+            BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
+                               "Use std::array instead",
+                               PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
+                                                                   AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
+        }
+
         if(OperationOnVariable.find(OperationType::Add_Begin)->second +
            OperationOnVariable.find(OperationType::Add_Middle)->second >
            OperationOnVariable.find(OperationType::Add_End)->second)
         {
-            const auto wrongDecl = VariableDeclaration.first.get<VarDecl>();
-
-            //Wrong matched variable declaration
-            if(wrongDecl == nullptr)
-            {
-                continue;
-            }
-
             BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
                     "std::list or std::forward_list will be better here",
                     PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
