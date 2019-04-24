@@ -166,6 +166,14 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
     for(const auto& VariableDeclaration : storage)
     {
         const auto& OperationOnVariable = VariableDeclaration.second;
+
+        // If we found other operations - disable analysis because of possible false positives
+        if(OperationOnVariable.find(OperationType::Other)->second > 0)
+        {
+            continue;
+        }
+
+
         if(OperationOnVariable.find(OperationType::Add_Begin)->second +
            OperationOnVariable.find(OperationType::Add_Middle)->second >
            OperationOnVariable.find(OperationType::Add_End)->second)
