@@ -167,7 +167,7 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
     {
         const auto& OperationOnVariable = VariableDeclaration.second;
         if(OperationOnVariable.find(OperationType::Add_Begin)->second +
-           OperationOnVariable.find(OperationType::Add_Middle)->second <
+           OperationOnVariable.find(OperationType::Add_Middle)->second >
            OperationOnVariable.find(OperationType::Add_End)->second)
         {
             const auto wrongDecl = VariableDeclaration.first.get<VarDecl>();
@@ -179,7 +179,7 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
             }
 
             BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
-                    "Found inefficient container usage",
+                    "std::list or std::forward_list will be better here",
                     PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
                             AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
         }
