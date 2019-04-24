@@ -297,6 +297,10 @@ def ReturnUndefChecker : Checker<"UndefReturn">,
 
 let ParentPackage = Cplusplus in {
 
+def InefficientContainerChecker : Checker<"InefficientContainer">,
+  HelpText<"Check inefficient STL container usages">,
+  Documentation<NotDocumented>;
+
 def InnerPointerChecker : Checker<"InnerPointer">,
   HelpText<"Check for inner pointers of C++ containers used after "
            "re/deallocation">,
@@ -338,10 +342,6 @@ def DeleteWithNonVirtualDtorChecker : Checker<"DeleteWithNonVirtualDtor">,
 
 def EnumCastOutOfRangeChecker : Checker<"EnumCastOutOfRange">,
   HelpText<"Check integer to enumeration casts for out of range values">,
-  Documentation<HasAlphaDocumentation>;
-
-def InefficientContainerChecker : Checker<"InefficientContainer">,
-  HelpText<"Check inefficient STL container usages">,
   Documentation<HasAlphaDocumentation>;
 
 def InvalidatedIteratorChecker : Checker<"InvalidatedIterator">,
