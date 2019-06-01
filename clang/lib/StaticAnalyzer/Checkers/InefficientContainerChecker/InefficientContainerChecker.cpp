@@ -206,6 +206,20 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
                                    wrongDecl->getSourceRange());
             }
         }
+
+        if(OperationOnVariable.find(OperationType::Add_Begin)->second +
+           OperationOnVariable.find(OperationType::Add_Middle)->second <=
+           OperationOnVariable.find(OperationType::Add_End)->second)
+        {
+            if(typeAsString.rfind("std::vector", 0) != 0)
+            {
+                BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
+                                   "std::vector will be better here",
+                                   PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
+                                                                       AM.getAnalysisDeclContext(wrongDecl)),
+                                   wrongDecl->getSourceRange());
+            }
+        }
     }
 }
 
