@@ -168,12 +168,13 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
             continue;
         }
 
+        const auto typeAsString = wrongDecl->getType().getUnqualifiedType().getAsString();
+
         // If we found other operations - disable analysis because of possible false positives
         if(OperationOnVariable.find(OperationType::Other)->second > 0)
         {
             continue;
         }
-
 
         if(OperationOnVariable.find(OperationType::Add_Begin)->second == 0 &&
            OperationOnVariable.find(OperationType::Add_Middle)->second == 0 &&
@@ -183,20 +184,27 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
            OperationOnVariable.find(OperationType::Delete_End)->second == 0 &&
            OperationOnVariable.find(OperationType::Other)->second == 0)
         {
-            BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
-                               "Use std::array instead",
-                               PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
-                                                                   AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
+            if(typeAsString.rfind("std::array", 0) != 0)
+            {
+                BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
+                                   "Use std::array instead",
+                                   PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
+                                                                       AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
+            }
         }
 
         if(OperationOnVariable.find(OperationType::Add_Begin)->second +
            OperationOnVariable.find(OperationType::Add_Middle)->second >
            OperationOnVariable.find(OperationType::Add_End)->second)
         {
-            BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
-                    "std::list or std::forward_list will be better here",
-                    PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
-                            AM.getAnalysisDeclContext(wrongDecl)), wrongDecl->getSourceRange());
+            if(typeAsString.rfind("std::list", 0) != 0 && typeAsString.rfind("std::forward_list", 0) != 0)
+            {
+                BR.EmitBasicReport(wrongDecl, this, "Inefficient container", "Performance degradation",
+                                   "std::list or std::forward_list will be better here",
+                                   PathDiagnosticLocation::createBegin(wrongDecl, BR.getSourceManager(),
+                                                                       AM.getAnalysisDeclContext(wrongDecl)),
+                                   wrongDecl->getSourceRange());
+            }
         }
     }
 }
