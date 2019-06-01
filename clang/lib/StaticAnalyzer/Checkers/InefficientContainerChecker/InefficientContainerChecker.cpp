@@ -28,7 +28,7 @@ namespace ento {
 namespace inefficientcontainer {
 
 constexpr char VectorType[] = "vectorType";
-
+constexpr char DequeType[] = "dequeType";
 constexpr char ListType[] = "listType";
 
 
@@ -77,10 +77,19 @@ ListMatcher getVectorTypeMatcher() {
                             qualType().bind(VectorType)))))))));
 }
 
+ListMatcher getDequeTypeMatcher() {
+    return qualType(hasUnqualifiedDesugaredType(
+            recordType(hasDeclaration(classTemplateSpecializationDecl(
+                    hasName("::std::deque"),
+                    hasTemplateArgument(0, templateArgument(refersToType(
+                            qualType().bind(DequeType)))))))));
+}
+
 void InefficientContainerChecker::registerContainerMatchers(ast_matchers::MatchFinder& Finder,
                                                             ContainerUsageStatisticsCallback* CB) const {
     Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getVectorTypeMatcher())).bind(VariableDeclaration))), CB);
     Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getListTypeMatcher())).bind(VariableDeclaration))), CB);
+    Finder.addMatcher(stmt(forEachDescendant(varDecl(hasType(getDequeTypeMatcher())).bind(VariableDeclaration))), CB);
 }
 
 void InefficientContainerChecker::registerOperationMatchers(ast_matchers::MatchFinder& Finder,
