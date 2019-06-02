@@ -139,6 +139,12 @@ void InefficientContainerChecker::registerOperationMatchers(ast_matchers::MatchF
                     bind(OperationTypeToString(OperationType::Delete_End)))),
             CB);
 
+    Finder.addMatcher(
+            stmt(forEachDescendant(cxxMemberCallExpr(
+                    on(declRefExpr(hasDeclaration(varDecl().bind(VariableDeclaration)))),
+                    callee(cxxMethodDecl())).
+                    bind(OperationTypeToString(OperationType::Other)))),
+            CB);
 }
 
 
@@ -180,7 +186,15 @@ void InefficientContainerChecker::analyze(const CandidateStorage& storage, BugRe
         const auto typeAsString = wrongDecl->getType().getUnqualifiedType().getAsString();
 
         // If we found other operations - disable analysis because of possible false positives
-        if(OperationOnVariable.find(OperationType::Other)->second > 0)
+        if(OperationOnVariable.find(OperationType::Other)->second >
+                (OperationOnVariable.find(OperationType::Add_Begin)->second +
+                 OperationOnVariable.find(OperationType::Add_Middle)->second +
+                 OperationOnVariable.find(OperationType::Add_End)->second +
+                 OperationOnVariable.find(OperationType::Delete_Begin)->second +
+                 OperationOnVariable.find(OperationType::Delete_Middle)->second +
+                 OperationOnVariable.find(OperationType::Delete_End)->second +
+                 OperationOnVariable.find(OperationType::Read)->second +
+                 OperationOnVariable.find(OperationType::Update)->second))
         {
             continue;
         }
