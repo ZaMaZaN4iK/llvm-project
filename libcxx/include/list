@@ -227,12 +227,12 @@ struct __list_node_pointer_traits {
   >::type __non_link_pointer;
 
   static _LIBCPP_INLINE_VISIBILITY
-  __link_pointer __unsafe_link_pointer_cast(__link_pointer __p) {
+  _LIBCPP_CONSTEXPR_AFTER_CXX17 __link_pointer __unsafe_link_pointer_cast(__link_pointer __p) {
       return __p;
   }
 
   static _LIBCPP_INLINE_VISIBILITY
-  __link_pointer __unsafe_link_pointer_cast(__non_link_pointer __p) {
+  _LIBCPP_CONSTEXPR_AFTER_CXX17 __link_pointer __unsafe_link_pointer_cast(__non_link_pointer __p) {
       return static_cast<__link_pointer>(static_cast<_VoidPtr>(__p));
   }
 
@@ -250,16 +250,16 @@ struct __list_node_base
     __link_pointer __next_;
 
     _LIBCPP_INLINE_VISIBILITY
-    __list_node_base() : __prev_(_NodeTraits::__unsafe_link_pointer_cast(__self())),
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_node_base() : __prev_(_NodeTraits::__unsafe_link_pointer_cast(__self())),
                          __next_(_NodeTraits::__unsafe_link_pointer_cast(__self())) {}
 
     _LIBCPP_INLINE_VISIBILITY
-    __base_pointer __self() {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __base_pointer __self() {
         return pointer_traits<__base_pointer>::pointer_to(*this);
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    __node_pointer __as_node() {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __node_pointer __as_node() {
         return static_cast<__node_pointer>(__self());
     }
 };
@@ -274,7 +274,7 @@ struct __list_node
     typedef typename __base::__link_pointer __link_pointer;
 
     _LIBCPP_INLINE_VISIBILITY
-    __link_pointer __as_link() {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __link_pointer __as_link() {
         return static_cast<__link_pointer>(__base::__self());
     }
 };
@@ -293,6 +293,7 @@ class _LIBCPP_TEMPLATE_VIS __list_iterator
 
 #if _LIBCPP_DEBUG_LEVEL >= 2
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit __list_iterator(__link_pointer __p, const void* __c) _NOEXCEPT
         : __ptr_(__p)
     {
@@ -300,6 +301,7 @@ class _LIBCPP_TEMPLATE_VIS __list_iterator
     }
 #else
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit __list_iterator(__link_pointer __p) _NOEXCEPT : __ptr_(__p) {}
 #endif
 
@@ -316,6 +318,7 @@ public:
     typedef typename pointer_traits<pointer>::difference_type difference_type;
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator() _NOEXCEPT : __ptr_(nullptr)
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -326,6 +329,7 @@ public:
 #if _LIBCPP_DEBUG_LEVEL >= 2
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator(const __list_iterator& __p)
         : __ptr_(__p.__ptr_)
     {
@@ -333,12 +337,14 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    //_LIBCPP_CONSTEXPR_AFTER_CXX17
     ~__list_iterator()
     {
         __get_db()->__erase_i(this);
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator& operator=(const __list_iterator& __p)
     {
         if (this != &__p)
@@ -352,6 +358,7 @@ public:
 #endif  // _LIBCPP_DEBUG_LEVEL >= 2
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     reference operator*() const
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -361,6 +368,7 @@ public:
         return __ptr_->__as_node()->__value_;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     pointer operator->() const
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -371,6 +379,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator& operator++()
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -381,9 +390,11 @@ public:
         return *this;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator operator++(int) {__list_iterator __t(*this); ++(*this); return __t;}
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator& operator--()
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -394,15 +405,18 @@ public:
         return *this;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_iterator operator--(int) {__list_iterator __t(*this); --(*this); return __t;}
 
     friend _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool operator==(const __list_iterator& __x, const __list_iterator& __y)
     {
         return __x.__ptr_ == __y.__ptr_;
     }
     friend _LIBCPP_INLINE_VISIBILITY
-     bool operator!=(const __list_iterator& __x, const __list_iterator& __y)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
+    bool operator!=(const __list_iterator& __x, const __list_iterator& __y)
         {return !(__x == __y);}
 };
 
@@ -416,6 +430,7 @@ class _LIBCPP_TEMPLATE_VIS __list_const_iterator
 
 #if _LIBCPP_DEBUG_LEVEL >= 2
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit __list_const_iterator(__link_pointer __p, const void* __c) _NOEXCEPT
         : __ptr_(__p)
     {
@@ -423,6 +438,7 @@ class _LIBCPP_TEMPLATE_VIS __list_const_iterator
     }
 #else
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit __list_const_iterator(__link_pointer __p) _NOEXCEPT : __ptr_(__p) {}
 #endif
 
@@ -436,6 +452,7 @@ public:
     typedef typename pointer_traits<pointer>::difference_type difference_type;
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator() _NOEXCEPT : __ptr_(nullptr)
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -443,6 +460,7 @@ public:
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator(const __list_iterator<_Tp, _VoidPtr>& __p) _NOEXCEPT
         : __ptr_(__p.__ptr_)
     {
@@ -454,6 +472,7 @@ public:
 #if _LIBCPP_DEBUG_LEVEL >= 2
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator(const __list_const_iterator& __p)
         : __ptr_(__p.__ptr_)
     {
@@ -461,12 +480,14 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    //_LIBCPP_CONSTEXPR_AFTER_CXX17
     ~__list_const_iterator()
     {
         __get_db()->__erase_i(this);
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator& operator=(const __list_const_iterator& __p)
     {
         if (this != &__p)
@@ -479,6 +500,7 @@ public:
 
 #endif  // _LIBCPP_DEBUG_LEVEL >= 2
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     reference operator*() const
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -488,6 +510,7 @@ public:
         return __ptr_->__as_node()->__value_;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     pointer operator->() const
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -498,6 +521,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator& operator++()
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -508,9 +532,11 @@ public:
         return *this;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator operator++(int) {__list_const_iterator __t(*this); ++(*this); return __t;}
 
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator& operator--()
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -521,14 +547,17 @@ public:
         return *this;
     }
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     __list_const_iterator operator--(int) {__list_const_iterator __t(*this); --(*this); return __t;}
 
     friend _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool operator==(const __list_const_iterator& __x, const __list_const_iterator& __y)
     {
         return __x.__ptr_ == __y.__ptr_;
     }
     friend _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool operator!=(const __list_const_iterator& __x, const __list_const_iterator& __y)
         {return !(__x == __y);}
 };
@@ -536,8 +565,8 @@ public:
 template <class _Tp, class _Alloc>
 class __list_imp
 {
-    __list_imp(const __list_imp&);
-    __list_imp& operator=(const __list_imp&);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp(const __list_imp&);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp& operator=(const __list_imp&);
 public:
     typedef _Alloc                                                  allocator_type;
     typedef allocator_traits<allocator_type>                        __alloc_traits;
@@ -570,47 +599,47 @@ protected:
     __compressed_pair<size_type, __node_allocator> __size_alloc_;
 
     _LIBCPP_INLINE_VISIBILITY
-    __link_pointer __end_as_link() const _NOEXCEPT {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __link_pointer __end_as_link() const _NOEXCEPT {
         return __node_pointer_traits::__unsafe_link_pointer_cast(
                 const_cast<__node_base&>(__end_).__self());
     }
 
     _LIBCPP_INLINE_VISIBILITY
-          size_type& __sz() _NOEXCEPT {return __size_alloc_.first();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 size_type& __sz() _NOEXCEPT {return __size_alloc_.first();}
     _LIBCPP_INLINE_VISIBILITY
-    const size_type& __sz() const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const size_type& __sz() const _NOEXCEPT
         {return __size_alloc_.first();}
     _LIBCPP_INLINE_VISIBILITY
-          __node_allocator& __node_alloc() _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __node_allocator& __node_alloc() _NOEXCEPT
           {return __size_alloc_.second();}
     _LIBCPP_INLINE_VISIBILITY
-    const __node_allocator& __node_alloc() const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const __node_allocator& __node_alloc() const _NOEXCEPT
         {return __size_alloc_.second();}
 
     _LIBCPP_INLINE_VISIBILITY
-    size_type __node_alloc_max_size() const _NOEXCEPT {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 size_type __node_alloc_max_size() const _NOEXCEPT {
         return __node_alloc_traits::max_size(__node_alloc());
     }
     _LIBCPP_INLINE_VISIBILITY
-    static void __unlink_nodes(__link_pointer __f, __link_pointer __l) _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 static void __unlink_nodes(__link_pointer __f, __link_pointer __l) _NOEXCEPT;
 
     _LIBCPP_INLINE_VISIBILITY
-    __list_imp()
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp()
         _NOEXCEPT_(is_nothrow_default_constructible<__node_allocator>::value);
     _LIBCPP_INLINE_VISIBILITY
-    __list_imp(const allocator_type& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp(const allocator_type& __a);
     _LIBCPP_INLINE_VISIBILITY
-    __list_imp(const __node_allocator& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp(const __node_allocator& __a);
 #ifndef _LIBCPP_CXX03_LANG
-    __list_imp(__node_allocator&& __a) _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp(__node_allocator&& __a) _NOEXCEPT;
 #endif
-    ~__list_imp();
-    void clear() _NOEXCEPT;
+    /*_LIBCPP_CONSTEXPR_AFTER_CXX17*/ ~__list_imp();
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void clear() _NOEXCEPT;
     _LIBCPP_INLINE_VISIBILITY
-    bool empty() const _NOEXCEPT {return __sz() == 0;}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool empty() const _NOEXCEPT {return __sz() == 0;}
 
     _LIBCPP_INLINE_VISIBILITY
-    iterator begin() _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator begin() _NOEXCEPT
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
         return iterator(__end_.__next_, this);
@@ -619,7 +648,7 @@ protected:
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator begin() const  _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator begin() const  _NOEXCEPT
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
         return const_iterator(__end_.__next_, this);
@@ -628,7 +657,7 @@ protected:
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
-    iterator end() _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator end() _NOEXCEPT
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
         return iterator(__end_as_link(), this);
@@ -637,7 +666,7 @@ protected:
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator end() const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator end() const _NOEXCEPT
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
         return const_iterator(__end_as_link(), this);
@@ -646,7 +675,7 @@ protected:
 #endif
     }
 
-    void swap(__list_imp& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void swap(__list_imp& __c)
 #if _LIBCPP_STD_VER >= 14
         _NOEXCEPT;
 #else
@@ -655,12 +684,12 @@ protected:
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
-    void __copy_assign_alloc(const __list_imp& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __copy_assign_alloc(const __list_imp& __c)
         {__copy_assign_alloc(__c, integral_constant<bool,
                       __node_alloc_traits::propagate_on_container_copy_assignment::value>());}
 
     _LIBCPP_INLINE_VISIBILITY
-    void __move_assign_alloc(__list_imp& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __move_assign_alloc(__list_imp& __c)
         _NOEXCEPT_(
             !__node_alloc_traits::propagate_on_container_move_assignment::value ||
             is_nothrow_move_assignable<__node_allocator>::value)
@@ -669,7 +698,7 @@ protected:
 
 private:
     _LIBCPP_INLINE_VISIBILITY
-    void __copy_assign_alloc(const __list_imp& __c, true_type)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __copy_assign_alloc(const __list_imp& __c, true_type)
         {
             if (__node_alloc() != __c.__node_alloc())
                 clear();
@@ -677,23 +706,23 @@ private:
         }
 
     _LIBCPP_INLINE_VISIBILITY
-    void __copy_assign_alloc(const __list_imp&, false_type)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __copy_assign_alloc(const __list_imp&, false_type)
         {}
 
     _LIBCPP_INLINE_VISIBILITY
-    void __move_assign_alloc(__list_imp& __c, true_type)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __move_assign_alloc(__list_imp& __c, true_type)
         _NOEXCEPT_(is_nothrow_move_assignable<__node_allocator>::value)
         {
             __node_alloc() = _VSTD::move(__c.__node_alloc());
         }
 
     _LIBCPP_INLINE_VISIBILITY
-    void __move_assign_alloc(__list_imp&, false_type)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __move_assign_alloc(__list_imp&, false_type)
         _NOEXCEPT
         {}
 
     _LIBCPP_INLINE_VISIBILITY
-    void __invalidate_all_iterators() {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __invalidate_all_iterators() {
 #if _LIBCPP_DEBUG_LEVEL >= 2
       __get_db()->__invalidate_all(this);
 #endif
@@ -703,6 +732,7 @@ private:
 // Unlink nodes [__f, __l]
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __list_imp<_Tp, _Alloc>::__unlink_nodes(__link_pointer __f, __link_pointer __l)
     _NOEXCEPT
@@ -713,6 +743,7 @@ __list_imp<_Tp, _Alloc>::__unlink_nodes(__link_pointer __f, __link_pointer __l)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 __list_imp<_Tp, _Alloc>::__list_imp()
         _NOEXCEPT_(is_nothrow_default_constructible<__node_allocator>::value)
     : __size_alloc_(0)
@@ -721,22 +752,26 @@ __list_imp<_Tp, _Alloc>::__list_imp()
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 __list_imp<_Tp, _Alloc>::__list_imp(const allocator_type& __a)
     : __size_alloc_(0, __node_allocator(__a))
 {
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 inline __list_imp<_Tp, _Alloc>::__list_imp(const __node_allocator& __a)
     : __size_alloc_(0, __a) {}
 
 #ifndef _LIBCPP_CXX03_LANG
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 inline __list_imp<_Tp, _Alloc>::__list_imp(__node_allocator&& __a) _NOEXCEPT
     : __size_alloc_(0, std::move(__a)) {}
 #endif
 
 template <class _Tp, class _Alloc>
+/*_LIBCPP_CONSTEXPR_AFTER_CXX17*/
 __list_imp<_Tp, _Alloc>::~__list_imp() {
   clear();
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -745,6 +780,7 @@ __list_imp<_Tp, _Alloc>::~__list_imp() {
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __list_imp<_Tp, _Alloc>::clear() _NOEXCEPT
 {
@@ -767,6 +803,7 @@ __list_imp<_Tp, _Alloc>::clear() _NOEXCEPT
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __list_imp<_Tp, _Alloc>::swap(__list_imp& __c)
 #if _LIBCPP_STD_VER >= 14
@@ -865,7 +902,7 @@ public:
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
-    list()
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list()
         _NOEXCEPT_(is_nothrow_default_constructible<__node_allocator>::value)
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -873,67 +910,67 @@ public:
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
-    explicit list(const allocator_type& __a) : base(__a)
+    explicit _LIBCPP_CONSTEXPR_AFTER_CXX17 list(const allocator_type& __a) : base(__a)
     {
 #if _LIBCPP_DEBUG_LEVEL >= 2
         __get_db()->__insert_c(this);
 #endif
     }
-    explicit list(size_type __n);
+    explicit _LIBCPP_CONSTEXPR_AFTER_CXX17 list(size_type __n);
 #if _LIBCPP_STD_VER > 11
-    explicit list(size_type __n, const allocator_type& __a);
+    explicit _LIBCPP_CONSTEXPR_AFTER_CXX17 list(size_type __n, const allocator_type& __a);
 #endif
-    list(size_type __n, const value_type& __x);
-    list(size_type __n, const value_type& __x, const allocator_type& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(size_type __n, const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(size_type __n, const value_type& __x, const allocator_type& __a);
     template <class _InpIter>
-        list(_InpIter __f, _InpIter __l,
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(_InpIter __f, _InpIter __l,
              typename enable_if<__is_input_iterator<_InpIter>::value>::type* = 0);
     template <class _InpIter>
-        list(_InpIter __f, _InpIter __l, const allocator_type& __a,
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(_InpIter __f, _InpIter __l, const allocator_type& __a,
              typename enable_if<__is_input_iterator<_InpIter>::value>::type* = 0);
 
-    list(const list& __c);
-    list(const list& __c, const allocator_type& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(const list& __c);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(const list& __c, const allocator_type& __a);
     _LIBCPP_INLINE_VISIBILITY
-    list& operator=(const list& __c);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list& operator=(const list& __c);
 #ifndef _LIBCPP_CXX03_LANG
-    list(initializer_list<value_type> __il);
-    list(initializer_list<value_type> __il, const allocator_type& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(initializer_list<value_type> __il);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(initializer_list<value_type> __il, const allocator_type& __a);
 
     _LIBCPP_INLINE_VISIBILITY
-    list(list&& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(list&& __c)
         _NOEXCEPT_(is_nothrow_move_constructible<__node_allocator>::value);
     _LIBCPP_INLINE_VISIBILITY
-    list(list&& __c, const allocator_type& __a);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list(list&& __c, const allocator_type& __a);
     _LIBCPP_INLINE_VISIBILITY
-    list& operator=(list&& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list& operator=(list&& __c)
         _NOEXCEPT_(
             __node_alloc_traits::propagate_on_container_move_assignment::value &&
             is_nothrow_move_assignable<__node_allocator>::value);
 
     _LIBCPP_INLINE_VISIBILITY
-    list& operator=(initializer_list<value_type> __il)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 list& operator=(initializer_list<value_type> __il)
         {assign(__il.begin(), __il.end()); return *this;}
 
     _LIBCPP_INLINE_VISIBILITY
-    void assign(initializer_list<value_type> __il)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void assign(initializer_list<value_type> __il)
         {assign(__il.begin(), __il.end());}
 #endif  // _LIBCPP_CXX03_LANG
 
     template <class _InpIter>
-        void assign(_InpIter __f, _InpIter __l,
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void assign(_InpIter __f, _InpIter __l,
              typename enable_if<__is_input_iterator<_InpIter>::value>::type* = 0);
-    void assign(size_type __n, const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void assign(size_type __n, const value_type& __x);
 
     _LIBCPP_INLINE_VISIBILITY
-    allocator_type get_allocator() const _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 allocator_type get_allocator() const _NOEXCEPT;
 
     _LIBCPP_INLINE_VISIBILITY
-    size_type size() const _NOEXCEPT     {return base::__sz();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 size_type size() const _NOEXCEPT     {return base::__sz();}
     _LIBCPP_NODISCARD_AFTER_CXX17 _LIBCPP_INLINE_VISIBILITY
-    bool empty() const _NOEXCEPT         {return base::empty();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool empty() const _NOEXCEPT         {return base::empty();}
     _LIBCPP_INLINE_VISIBILITY
-    size_type max_size() const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 size_type max_size() const _NOEXCEPT
         {
             return std::min<size_type>(
                 base::__node_alloc_max_size(),
@@ -941,90 +978,90 @@ public:
         }
 
     _LIBCPP_INLINE_VISIBILITY
-          iterator begin() _NOEXCEPT        {return base::begin();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator begin() _NOEXCEPT        {return base::begin();}
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator begin()  const _NOEXCEPT {return base::begin();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator begin()  const _NOEXCEPT {return base::begin();}
     _LIBCPP_INLINE_VISIBILITY
-          iterator end() _NOEXCEPT          {return base::end();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator end() _NOEXCEPT          {return base::end();}
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator end()    const _NOEXCEPT {return base::end();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator end()    const _NOEXCEPT {return base::end();}
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator cbegin() const _NOEXCEPT {return base::begin();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator cbegin() const _NOEXCEPT {return base::begin();}
     _LIBCPP_INLINE_VISIBILITY
-    const_iterator cend()   const _NOEXCEPT {return base::end();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_iterator cend()   const _NOEXCEPT {return base::end();}
 
     _LIBCPP_INLINE_VISIBILITY
-          reverse_iterator rbegin() _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reverse_iterator rbegin() _NOEXCEPT
             {return       reverse_iterator(end());}
     _LIBCPP_INLINE_VISIBILITY
-    const_reverse_iterator rbegin()  const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reverse_iterator rbegin()  const _NOEXCEPT
         {return const_reverse_iterator(end());}
     _LIBCPP_INLINE_VISIBILITY
-          reverse_iterator rend() _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reverse_iterator rend() _NOEXCEPT
             {return       reverse_iterator(begin());}
     _LIBCPP_INLINE_VISIBILITY
-    const_reverse_iterator rend()    const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reverse_iterator rend()    const _NOEXCEPT
         {return const_reverse_iterator(begin());}
     _LIBCPP_INLINE_VISIBILITY
-    const_reverse_iterator crbegin() const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reverse_iterator crbegin() const _NOEXCEPT
         {return const_reverse_iterator(end());}
     _LIBCPP_INLINE_VISIBILITY
-    const_reverse_iterator crend()   const _NOEXCEPT
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reverse_iterator crend()   const _NOEXCEPT
         {return const_reverse_iterator(begin());}
 
     _LIBCPP_INLINE_VISIBILITY
-    reference front()
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reference front()
     {
         _LIBCPP_ASSERT(!empty(), "list::front called on empty list");
         return base::__end_.__next_->__as_node()->__value_;
     }
     _LIBCPP_INLINE_VISIBILITY
-    const_reference front() const
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reference front() const
     {
         _LIBCPP_ASSERT(!empty(), "list::front called on empty list");
         return base::__end_.__next_->__as_node()->__value_;
     }
     _LIBCPP_INLINE_VISIBILITY
-    reference back()
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reference back()
     {
         _LIBCPP_ASSERT(!empty(), "list::back called on empty list");
         return base::__end_.__prev_->__as_node()->__value_;
     }
     _LIBCPP_INLINE_VISIBILITY
-    const_reference back() const
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 const_reference back() const
     {
         _LIBCPP_ASSERT(!empty(), "list::back called on empty list");
         return base::__end_.__prev_->__as_node()->__value_;
     }
 
 #ifndef _LIBCPP_CXX03_LANG
-    void push_front(value_type&& __x);
-    void push_back(value_type&& __x);
+     void push_front(value_type&& __x);
+     void push_back(value_type&& __x);
 
     template <class... _Args>
 #if _LIBCPP_STD_VER > 14
-       reference emplace_front(_Args&&... __args);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reference emplace_front(_Args&&... __args);
 #else
-       void      emplace_front(_Args&&... __args);
+    void      emplace_front(_Args&&... __args);
 #endif
     template <class... _Args>
 #if _LIBCPP_STD_VER > 14
-        reference emplace_back(_Args&&... __args);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 reference emplace_back(_Args&&... __args);
 #else
-       void       emplace_back(_Args&&... __args);
+    void       emplace_back(_Args&&... __args);
 #endif
     template <class... _Args>
-        iterator emplace(const_iterator __p, _Args&&... __args);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator emplace(const_iterator __p, _Args&&... __args);
 
-    iterator insert(const_iterator __p, value_type&& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, value_type&& __x);
 
     _LIBCPP_INLINE_VISIBILITY
-    iterator insert(const_iterator __p, initializer_list<value_type> __il)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, initializer_list<value_type> __il)
         {return insert(__p, __il.begin(), __il.end());}
 #endif  // _LIBCPP_CXX03_LANG
 
-    void push_front(const value_type& __x);
-    void push_back(const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void push_front(const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void push_back(const value_type& __x);
 
 #ifndef _LIBCPP_CXX03_LANG
     template <class _Arg>
@@ -1032,17 +1069,17 @@ public:
     void __emplace_back(_Arg&& __arg) { emplace_back(_VSTD::forward<_Arg>(__arg)); }
 #else
     _LIBCPP_INLINE_VISIBILITY
-    void __emplace_back(value_type const& __arg) { push_back(__arg); }
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __emplace_back(value_type const& __arg) { push_back(__arg); }
 #endif
 
-    iterator insert(const_iterator __p, const value_type& __x);
-    iterator insert(const_iterator __p, size_type __n, const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, size_type __n, const value_type& __x);
     template <class _InpIter>
-        iterator insert(const_iterator __p, _InpIter __f, _InpIter __l,
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, _InpIter __f, _InpIter __l,
              typename enable_if<__is_input_iterator<_InpIter>::value>::type* = 0);
 
     _LIBCPP_INLINE_VISIBILITY
-    void swap(list& __c)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void swap(list& __c)
 #if _LIBCPP_STD_VER >= 14
         _NOEXCEPT
 #else
@@ -1051,18 +1088,18 @@ public:
 #endif
         {base::swap(__c);}
     _LIBCPP_INLINE_VISIBILITY
-    void clear() _NOEXCEPT {base::clear();}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void clear() _NOEXCEPT {base::clear();}
 
-    void pop_front();
-    void pop_back();
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void pop_front();
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void pop_back();
 
-    iterator erase(const_iterator __p);
-    iterator erase(const_iterator __f, const_iterator __l);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator erase(const_iterator __p);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator erase(const_iterator __f, const_iterator __l);
 
-    void resize(size_type __n);
-    void resize(size_type __n, const value_type& __x);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void resize(size_type __n);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void resize(size_type __n, const value_type& __x);
 
-    void splice(const_iterator __p, list& __c);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void splice(const_iterator __p, list& __c);
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     void splice(const_iterator __p, list&& __c) {splice(__p, __c);}
@@ -1073,17 +1110,17 @@ public:
     void splice(const_iterator __p, list&& __c, const_iterator __f, const_iterator __l)
         {splice(__p, __c, __f, __l);}
 #endif
-    void splice(const_iterator __p, list& __c, const_iterator __i);
-    void splice(const_iterator __p, list& __c, const_iterator __f, const_iterator __l);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void splice(const_iterator __p, list& __c, const_iterator __i);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void splice(const_iterator __p, list& __c, const_iterator __f, const_iterator __l);
 
-    __remove_return_type remove(const value_type& __x);
-    template <class _Pred> __remove_return_type remove_if(_Pred __pred);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __remove_return_type remove(const value_type& __x);
+    template <class _Pred> _LIBCPP_CONSTEXPR_AFTER_CXX17 __remove_return_type remove_if(_Pred __pred);
     _LIBCPP_INLINE_VISIBILITY
-    __remove_return_type unique() { return unique(__equal_to<value_type>()); }
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __remove_return_type unique() { return unique(__equal_to<value_type>()); }
     template <class _BinaryPred>
-        __remove_return_type unique(_BinaryPred __binary_pred);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __remove_return_type unique(_BinaryPred __binary_pred);
     _LIBCPP_INLINE_VISIBILITY
-    void merge(list& __c);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void merge(list& __c);
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     void merge(list&& __c) {merge(__c);}
@@ -1093,23 +1130,23 @@ public:
         void merge(list&& __c, _Comp __comp) {merge(__c, __comp);}
 #endif
     template <class _Comp>
-        void merge(list& __c, _Comp __comp);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void merge(list& __c, _Comp __comp);
 
     _LIBCPP_INLINE_VISIBILITY
-    void sort();
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void sort();
     template <class _Comp>
         _LIBCPP_INLINE_VISIBILITY
-        void sort(_Comp __comp);
+        _LIBCPP_CONSTEXPR_AFTER_CXX17 void sort(_Comp __comp);
 
-    void reverse() _NOEXCEPT;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void reverse() _NOEXCEPT;
 
-    bool __invariants() const;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool __invariants() const;
 
     typedef __allocator_destructor<__node_allocator> __node_destructor;
     typedef unique_ptr<__node, __node_destructor> __hold_pointer;
 
     _LIBCPP_INLINE_VISIBILITY
-    __hold_pointer __allocate_node(__node_allocator& __na) {
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __hold_pointer __allocate_node(__node_allocator& __na) {
       __node_pointer __p = __node_alloc_traits::allocate(__na, 1);
       __p->__prev_ = nullptr;
       return __hold_pointer(__p, __node_destructor(__na, 1));
@@ -1117,27 +1154,27 @@ public:
 
 #if _LIBCPP_DEBUG_LEVEL >= 2
 
-    bool __dereferenceable(const const_iterator* __i) const;
-    bool __decrementable(const const_iterator* __i) const;
-    bool __addable(const const_iterator* __i, ptrdiff_t __n) const;
-    bool __subscriptable(const const_iterator* __i, ptrdiff_t __n) const;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool __dereferenceable(const const_iterator* __i) const;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool __decrementable(const const_iterator* __i) const;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool __addable(const const_iterator* __i, ptrdiff_t __n) const;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 bool __subscriptable(const const_iterator* __i, ptrdiff_t __n) const;
 
 #endif  // _LIBCPP_DEBUG_LEVEL >= 2
 
 private:
     _LIBCPP_INLINE_VISIBILITY
-    static void __link_nodes  (__link_pointer __p, __link_pointer __f, __link_pointer __l);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 static void __link_nodes  (__link_pointer __p, __link_pointer __f, __link_pointer __l);
     _LIBCPP_INLINE_VISIBILITY
-    void __link_nodes_at_front(__link_pointer __f, __link_pointer __l);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __link_nodes_at_front(__link_pointer __f, __link_pointer __l);
     _LIBCPP_INLINE_VISIBILITY
-    void __link_nodes_at_back (__link_pointer __f, __link_pointer __l);
-    iterator __iterator(size_type __n);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __link_nodes_at_back (__link_pointer __f, __link_pointer __l);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator __iterator(size_type __n);
     template <class _Comp>
-        static iterator __sort(iterator __f1, iterator __e2, size_type __n, _Comp& __comp);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 static iterator __sort(iterator __f1, iterator __e2, size_type __n, _Comp& __comp);
 
-    void __move_assign(list& __c, true_type)
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __move_assign(list& __c, true_type)
         _NOEXCEPT_(is_nothrow_move_assignable<__node_allocator>::value);
-    void __move_assign(list& __c, false_type);
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __move_assign(list& __c, false_type);
 };
 
 #ifndef _LIBCPP_HAS_NO_DEDUCTION_GUIDES
@@ -1159,6 +1196,7 @@ list(_InputIterator, _InputIterator, _Alloc)
 // Link in nodes [__f, __l] just prior to __p
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::__link_nodes(__link_pointer __p, __link_pointer __f, __link_pointer __l)
 {
@@ -1171,6 +1209,7 @@ list<_Tp, _Alloc>::__link_nodes(__link_pointer __p, __link_pointer __f, __link_p
 // Link in nodes [__f, __l] at the front of the list
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::__link_nodes_at_front(__link_pointer __f, __link_pointer __l)
 {
@@ -1183,6 +1222,7 @@ list<_Tp, _Alloc>::__link_nodes_at_front(__link_pointer __f, __link_pointer __l)
 // Link in nodes [__f, __l] at the back of the list
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::__link_nodes_at_back(__link_pointer __f, __link_pointer __l)
 {
@@ -1195,6 +1235,7 @@ list<_Tp, _Alloc>::__link_nodes_at_back(__link_pointer __f, __link_pointer __l)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::__iterator(size_type __n)
 {
@@ -1203,6 +1244,7 @@ list<_Tp, _Alloc>::__iterator(size_type __n)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(size_type __n)
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -1218,6 +1260,7 @@ list<_Tp, _Alloc>::list(size_type __n)
 
 #if _LIBCPP_STD_VER > 11
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(size_type __n, const allocator_type& __a) : base(__a)
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -1229,6 +1272,7 @@ list<_Tp, _Alloc>::list(size_type __n, const allocator_type& __a) : base(__a)
 #endif
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(size_type __n, const value_type& __x)
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -1239,6 +1283,7 @@ list<_Tp, _Alloc>::list(size_type __n, const value_type& __x)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(size_type __n, const value_type& __x, const allocator_type& __a)
     : base(__a)
 {
@@ -1251,6 +1296,7 @@ list<_Tp, _Alloc>::list(size_type __n, const value_type& __x, const allocator_ty
 
 template <class _Tp, class _Alloc>
 template <class _InpIter>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(_InpIter __f, _InpIter __l,
                         typename enable_if<__is_input_iterator<_InpIter>::value>::type*)
 {
@@ -1263,6 +1309,7 @@ list<_Tp, _Alloc>::list(_InpIter __f, _InpIter __l,
 
 template <class _Tp, class _Alloc>
 template <class _InpIter>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(_InpIter __f, _InpIter __l, const allocator_type& __a,
                         typename enable_if<__is_input_iterator<_InpIter>::value>::type*)
     : base(__a)
@@ -1275,6 +1322,7 @@ list<_Tp, _Alloc>::list(_InpIter __f, _InpIter __l, const allocator_type& __a,
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(const list& __c)
     : base(__node_alloc_traits::select_on_container_copy_construction(
           __c.__node_alloc())) {
@@ -1286,6 +1334,7 @@ list<_Tp, _Alloc>::list(const list& __c)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(const list& __c, const allocator_type& __a)
     : base(__a)
 {
@@ -1299,6 +1348,7 @@ list<_Tp, _Alloc>::list(const list& __c, const allocator_type& __a)
 #ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(initializer_list<value_type> __il, const allocator_type& __a)
     : base(__a)
 {
@@ -1311,6 +1361,7 @@ list<_Tp, _Alloc>::list(initializer_list<value_type> __il, const allocator_type&
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(initializer_list<value_type> __il)
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -1322,6 +1373,7 @@ list<_Tp, _Alloc>::list(initializer_list<value_type> __il)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 inline list<_Tp, _Alloc>::list(list&& __c)
     _NOEXCEPT_(is_nothrow_move_constructible<__node_allocator>::value)
     : base(_VSTD::move(__c.__node_alloc())) {
@@ -1333,6 +1385,7 @@ inline list<_Tp, _Alloc>::list(list&& __c)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>::list(list&& __c, const allocator_type& __a)
     : base(__a)
 {
@@ -1350,6 +1403,7 @@ list<_Tp, _Alloc>::list(list&& __c, const allocator_type& __a)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>&
 list<_Tp, _Alloc>::operator=(list&& __c)
         _NOEXCEPT_(
@@ -1362,6 +1416,7 @@ list<_Tp, _Alloc>::operator=(list&& __c)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::__move_assign(list& __c, false_type)
 {
@@ -1375,6 +1430,7 @@ list<_Tp, _Alloc>::__move_assign(list& __c, false_type)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::__move_assign(list& __c, true_type)
         _NOEXCEPT_(is_nothrow_move_assignable<__node_allocator>::value)
@@ -1388,6 +1444,7 @@ list<_Tp, _Alloc>::__move_assign(list& __c, true_type)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 list<_Tp, _Alloc>&
 list<_Tp, _Alloc>::operator=(const list& __c)
 {
@@ -1401,6 +1458,7 @@ list<_Tp, _Alloc>::operator=(const list& __c)
 
 template <class _Tp, class _Alloc>
 template <class _InpIter>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::assign(_InpIter __f, _InpIter __l,
                           typename enable_if<__is_input_iterator<_InpIter>::value>::type*)
@@ -1419,6 +1477,7 @@ list<_Tp, _Alloc>::assign(_InpIter __f, _InpIter __l,
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::assign(size_type __n, const value_type& __x)
 {
@@ -1437,6 +1496,7 @@ list<_Tp, _Alloc>::assign(size_type __n, const value_type& __x)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 _Alloc
 list<_Tp, _Alloc>::get_allocator() const _NOEXCEPT
 {
@@ -1444,6 +1504,7 @@ list<_Tp, _Alloc>::get_allocator() const _NOEXCEPT
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::insert(const_iterator __p, const value_type& __x)
 {
@@ -1465,6 +1526,7 @@ list<_Tp, _Alloc>::insert(const_iterator __p, const value_type& __x)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::insert(const_iterator __p, size_type __n, const value_type& __x)
 {
@@ -1530,6 +1592,7 @@ list<_Tp, _Alloc>::insert(const_iterator __p, size_type __n, const value_type& _
 
 template <class _Tp, class _Alloc>
 template <class _InpIter>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::insert(const_iterator __p, _InpIter __f, _InpIter __l,
              typename enable_if<__is_input_iterator<_InpIter>::value>::type*)
@@ -1595,6 +1658,7 @@ list<_Tp, _Alloc>::insert(const_iterator __p, _InpIter __f, _InpIter __l,
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::push_front(const value_type& __x)
 {
@@ -1608,6 +1672,7 @@ list<_Tp, _Alloc>::push_front(const value_type& __x)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::push_back(const value_type& __x)
 {
@@ -1647,6 +1712,7 @@ list<_Tp, _Alloc>::push_back(value_type&& __x)
 
 template <class _Tp, class _Alloc>
 template <class... _Args>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 #if _LIBCPP_STD_VER > 14
 typename list<_Tp, _Alloc>::reference
 #else
@@ -1668,6 +1734,7 @@ list<_Tp, _Alloc>::emplace_front(_Args&&... __args)
 
 template <class _Tp, class _Alloc>
 template <class... _Args>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 #if _LIBCPP_STD_VER > 14
 typename list<_Tp, _Alloc>::reference
 #else
@@ -1690,6 +1757,7 @@ list<_Tp, _Alloc>::emplace_back(_Args&&... __args)
 
 template <class _Tp, class _Alloc>
 template <class... _Args>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::emplace(const_iterator __p, _Args&&... __args)
 {
@@ -1713,6 +1781,7 @@ list<_Tp, _Alloc>::emplace(const_iterator __p, _Args&&... __args)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::insert(const_iterator __p, value_type&& __x)
 {
@@ -1738,6 +1807,7 @@ list<_Tp, _Alloc>::insert(const_iterator __p, value_type&& __x)
 #endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::pop_front()
 {
@@ -1767,6 +1837,7 @@ list<_Tp, _Alloc>::pop_front()
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::pop_back()
 {
@@ -1796,6 +1867,7 @@ list<_Tp, _Alloc>::pop_back()
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::erase(const_iterator __p)
 {
@@ -1837,6 +1909,7 @@ list<_Tp, _Alloc>::erase(const_iterator __p)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::erase(const_iterator __f, const_iterator __l)
 {
@@ -1885,6 +1958,7 @@ list<_Tp, _Alloc>::erase(const_iterator __f, const_iterator __l)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::resize(size_type __n)
 {
@@ -1942,6 +2016,7 @@ list<_Tp, _Alloc>::resize(size_type __n)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::resize(size_type __n, const value_type& __x)
 {
@@ -2000,6 +2075,7 @@ list<_Tp, _Alloc>::resize(size_type __n, const value_type& __x)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::splice(const_iterator __p, list& __c)
 {
@@ -2042,6 +2118,7 @@ list<_Tp, _Alloc>::splice(const_iterator __p, list& __c)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::splice(const_iterator __p, list& __c, const_iterator __i)
 {
@@ -2087,6 +2164,7 @@ list<_Tp, _Alloc>::splice(const_iterator __p, list& __c, const_iterator __i)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::splice(const_iterator __p, list& __c, const_iterator __f, const_iterator __l)
 {
@@ -2147,6 +2225,7 @@ list<_Tp, _Alloc>::splice(const_iterator __p, list& __c, const_iterator __f, con
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::__remove_return_type
 list<_Tp, _Alloc>::remove(const value_type& __x)
 {
@@ -2172,6 +2251,7 @@ list<_Tp, _Alloc>::remove(const value_type& __x)
 
 template <class _Tp, class _Alloc>
 template <class _Pred>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::__remove_return_type
 list<_Tp, _Alloc>::remove_if(_Pred __pred)
 {
@@ -2197,6 +2277,7 @@ list<_Tp, _Alloc>::remove_if(_Pred __pred)
 
 template <class _Tp, class _Alloc>
 template <class _BinaryPred>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::__remove_return_type
 list<_Tp, _Alloc>::unique(_BinaryPred __binary_pred)
 {
@@ -2217,6 +2298,7 @@ list<_Tp, _Alloc>::unique(_BinaryPred __binary_pred)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::merge(list& __c)
 {
@@ -2225,6 +2307,7 @@ list<_Tp, _Alloc>::merge(list& __c)
 
 template <class _Tp, class _Alloc>
 template <class _Comp>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::merge(list& __c, _Comp __comp)
 {
@@ -2279,6 +2362,7 @@ list<_Tp, _Alloc>::merge(list& __c, _Comp __comp)
 
 template <class _Tp, class _Alloc>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::sort()
 {
@@ -2288,6 +2372,7 @@ list<_Tp, _Alloc>::sort()
 template <class _Tp, class _Alloc>
 template <class _Comp>
 inline
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::sort(_Comp __comp)
 {
@@ -2296,6 +2381,7 @@ list<_Tp, _Alloc>::sort(_Comp __comp)
 
 template <class _Tp, class _Alloc>
 template <class _Comp>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::__sort(iterator __f1, iterator __e2, size_type __n, _Comp& __comp)
 {
@@ -2358,6 +2444,7 @@ list<_Tp, _Alloc>::__sort(iterator __f1, iterator __e2, size_type __n, _Comp& __
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::reverse() _NOEXCEPT
 {
@@ -2374,6 +2461,7 @@ list<_Tp, _Alloc>::reverse() _NOEXCEPT
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 list<_Tp, _Alloc>::__invariants() const
 {
@@ -2383,6 +2471,7 @@ list<_Tp, _Alloc>::__invariants() const
 #if _LIBCPP_DEBUG_LEVEL >= 2
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 list<_Tp, _Alloc>::__dereferenceable(const const_iterator* __i) const
 {
@@ -2390,6 +2479,7 @@ list<_Tp, _Alloc>::__dereferenceable(const const_iterator* __i) const
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 list<_Tp, _Alloc>::__decrementable(const const_iterator* __i) const
 {
@@ -2397,6 +2487,7 @@ list<_Tp, _Alloc>::__decrementable(const const_iterator* __i) const
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 list<_Tp, _Alloc>::__addable(const const_iterator*, ptrdiff_t) const
 {
@@ -2404,6 +2495,7 @@ list<_Tp, _Alloc>::__addable(const const_iterator*, ptrdiff_t) const
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 list<_Tp, _Alloc>::__subscriptable(const const_iterator*, ptrdiff_t) const
 {
@@ -2414,6 +2506,7 @@ list<_Tp, _Alloc>::__subscriptable(const const_iterator*, ptrdiff_t) const
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator==(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2422,6 +2515,7 @@ operator==(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator< (const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2430,6 +2524,7 @@ operator< (const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator!=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2438,6 +2533,7 @@ operator!=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator> (const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2446,6 +2542,7 @@ operator> (const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator>=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2454,6 +2551,7 @@ operator>=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator<=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 {
@@ -2462,6 +2560,7 @@ operator<=(const list<_Tp, _Alloc>& __x, const list<_Tp, _Alloc>& __y)
 
 template <class _Tp, class _Alloc>
 inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 swap(list<_Tp, _Alloc>& __x, list<_Tp, _Alloc>& __y)
     _NOEXCEPT_(_NOEXCEPT_(__x.swap(__y)))
@@ -2471,11 +2570,13 @@ swap(list<_Tp, _Alloc>& __x, list<_Tp, _Alloc>& __y)
 
 #if _LIBCPP_STD_VER > 17
 template <class _Tp, class _Allocator, class _Predicate>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 inline _LIBCPP_INLINE_VISIBILITY
 void erase_if(list<_Tp, _Allocator>& __c, _Predicate __pred)
 { __c.remove_if(__pred); }
 
 template <class _Tp, class _Allocator, class _Up>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 inline _LIBCPP_INLINE_VISIBILITY
 void erase(list<_Tp, _Allocator>& __c, const _Up& __v)
 { _VSTD::erase_if(__c, [&](auto& __elem) { return __elem == __v; }); }
