@@ -35,116 +35,116 @@ public:
     typedef reverse_iterator<iterator> reverse_iterator;
     typedef reverse_iterator<const_iterator> const_reverse_iterator;
 
-    list()
+    constexpr list()
         noexcept(is_nothrow_default_constructible<allocator_type>::value);
-    explicit list(const allocator_type& a);
-    explicit list(size_type n);
-    explicit list(size_type n, const allocator_type& a); // C++14
-    list(size_type n, const value_type& value);
-    list(size_type n, const value_type& value, const allocator_type& a);
+    constexpr explicit list(const allocator_type& a);
+    constexpr explicit list(size_type n);
+    constexpr explicit list(size_type n, const allocator_type& a); // C++14
+    constexpr list(size_type n, const value_type& value);
+    constexpr list(size_type n, const value_type& value, const allocator_type& a);
     template <class Iter>
-        list(Iter first, Iter last);
+        constexpr list(Iter first, Iter last);
     template <class Iter>
-        list(Iter first, Iter last, const allocator_type& a);
-    list(const list& x);
-    list(const list&, const allocator_type& a);
-    list(list&& x)
+        constexpr list(Iter first, Iter last, const allocator_type& a);
+    constexpr list(const list& x);
+    constexpr list(const list&, const allocator_type& a);
+    constexpr list(list&& x)
         noexcept(is_nothrow_move_constructible<allocator_type>::value);
-    list(list&&, const allocator_type& a);
-    list(initializer_list<value_type>);
-    list(initializer_list<value_type>, const allocator_type& a);
+    constexpr list(list&&, const allocator_type& a);
+    constexpr list(initializer_list<value_type>);
+    constexpr list(initializer_list<value_type>, const allocator_type& a);
 
-    ~list();
+    constexpr ~list();
 
-    list& operator=(const list& x);
-    list& operator=(list&& x)
+    constexpr list& operator=(const list& x);
+    constexpr list& operator=(list&& x)
         noexcept(
              allocator_type::propagate_on_container_move_assignment::value &&
              is_nothrow_move_assignable<allocator_type>::value);
-    list& operator=(initializer_list<value_type>);
+    constexpr list& operator=(initializer_list<value_type>);
     template <class Iter>
-        void assign(Iter first, Iter last);
-    void assign(size_type n, const value_type& t);
-    void assign(initializer_list<value_type>);
+        constexpr void assign(Iter first, Iter last);
+    constexpr void assign(size_type n, const value_type& t);
+    constexpr void assign(initializer_list<value_type>);
 
-    allocator_type get_allocator() const noexcept;
+    constexpr allocator_type get_allocator() const noexcept;
 
-    iterator begin() noexcept;
-    const_iterator begin() const noexcept;
-    iterator end() noexcept;
-    const_iterator end() const noexcept;
-    reverse_iterator rbegin() noexcept;
-    const_reverse_iterator rbegin() const noexcept;
-    reverse_iterator rend() noexcept;
-    const_reverse_iterator rend() const noexcept;
-    const_iterator cbegin() const noexcept;
-    const_iterator cend() const noexcept;
-    const_reverse_iterator crbegin() const noexcept;
-    const_reverse_iterator crend() const noexcept;
+    constexpr iterator begin() noexcept;
+    constexpr const_iterator begin() const noexcept;
+    constexpr iterator end() noexcept;
+    constexpr const_iterator end() const noexcept;
+    constexpr reverse_iterator rbegin() noexcept;
+    constexpr const_reverse_iterator rbegin() const noexcept;
+    constexpr reverse_iterator rend() noexcept;
+    constexpr const_reverse_iterator rend() const noexcept;
+    constexpr const_iterator cbegin() const noexcept;
+    constexpr const_iterator cend() const noexcept;
+    constexpr const_reverse_iterator crbegin() const noexcept;
+    constexpr const_reverse_iterator crend() const noexcept;
 
-    reference front();
-    const_reference front() const;
-    reference back();
-    const_reference back() const;
+    constexpr reference front();
+    constexpr const_reference front() const;
+    constexpr reference back();
+    constexpr const_reference back() const;
 
-    bool empty() const noexcept;
-    size_type size() const noexcept;
-    size_type max_size() const noexcept;
+    constexpr bool empty() const noexcept;
+    constexpr size_type size() const noexcept;
+    constexpr size_type max_size() const noexcept;
 
     template <class... Args>
-        reference emplace_front(Args&&... args); // reference in C++17
-    void pop_front();
+        constexpr reference emplace_front(Args&&... args); // reference in C++17
+    constexpr void pop_front();
     template <class... Args>
-        reference emplace_back(Args&&... args);  // reference in C++17
-    void pop_back();
-    void push_front(const value_type& x);
-    void push_front(value_type&& x);
-    void push_back(const value_type& x);
-    void push_back(value_type&& x);
+        constexpr reference emplace_back(Args&&... args);  // reference in C++17
+    constexpr void pop_back();
+    constexpr void push_front(const value_type& x);
+    constexpr void push_front(value_type&& x);
+    constexpr void push_back(const value_type& x);
+    constexpr void push_back(value_type&& x);
     template <class... Args>
-        iterator emplace(const_iterator position, Args&&... args);
-    iterator insert(const_iterator position, const value_type& x);
-    iterator insert(const_iterator position, value_type&& x);
-    iterator insert(const_iterator position, size_type n, const value_type& x);
+        constexpr iterator emplace(const_iterator position, Args&&... args);
+    constexpr iterator insert(const_iterator position, const value_type& x);
+    constexpr iterator insert(const_iterator position, value_type&& x);
+    constexpr iterator insert(const_iterator position, size_type n, const value_type& x);
     template <class Iter>
-        iterator insert(const_iterator position, Iter first, Iter last);
-    iterator insert(const_iterator position, initializer_list<value_type> il);
+        constexpr iterator insert(const_iterator position, Iter first, Iter last);
+    constexpr iterator insert(const_iterator position, initializer_list<value_type> il);
 
-    iterator erase(const_iterator position);
-    iterator erase(const_iterator position, const_iterator last);
+    constexpr iterator erase(const_iterator position);
+    constexpr iterator erase(const_iterator position, const_iterator last);
 
-    void resize(size_type sz);
-    void resize(size_type sz, const value_type& c);
+    constexpr void resize(size_type sz);
+    constexpr void resize(size_type sz, const value_type& c);
 
-    void swap(list&)
+    constexpr void swap(list&)
         noexcept(allocator_traits<allocator_type>::is_always_equal::value);  // C++17
-    void clear() noexcept;
+    constexpr void clear() noexcept;
 
-    void splice(const_iterator position, list& x);
-    void splice(const_iterator position, list&& x);
-    void splice(const_iterator position, list& x, const_iterator i);
-    void splice(const_iterator position, list&& x, const_iterator i);
-    void splice(const_iterator position, list& x, const_iterator first,
+    constexpr void splice(const_iterator position, list& x);
+    constexpr void splice(const_iterator position, list&& x);
+    constexpr void splice(const_iterator position, list& x, const_iterator i);
+    constexpr void splice(const_iterator position, list&& x, const_iterator i);
+    constexpr void splice(const_iterator position, list& x, const_iterator first,
                                                   const_iterator last);
-    void splice(const_iterator position, list&& x, const_iterator first,
+    constexpr void splice(const_iterator position, list&& x, const_iterator first,
                                                   const_iterator last);
 
-    size_type remove(const value_type& value);       // void before C++20
+    constexpr size_type remove(const value_type& value);       // void before C++20
     template <class Pred>
-      size_type remove_if(Pred pred);                // void before C++20
-    size_type unique();                              // void before C++20
+      constexpr size_type remove_if(Pred pred);                // void before C++20
+    constexpr size_type unique();                              // void before C++20
     template <class BinaryPredicate>
-      size_type unique(BinaryPredicate binary_pred); // void before C++20
-    void merge(list& x);
-    void merge(list&& x);
+      constexpr size_type unique(BinaryPredicate binary_pred); // void before C++20
+    constexpr void merge(list& x);
+    constexpr void merge(list&& x);
     template <class Compare>
-        void merge(list& x, Compare comp);
+        constexpr void merge(list& x, Compare comp);
     template <class Compare>
-        void merge(list&& x, Compare comp);
-    void sort();
+        constexpr void merge(list&& x, Compare comp);
+    constexpr void sort();
     template <class Compare>
-        void sort(Compare comp);
-    void reverse() noexcept;
+        constexpr void sort(Compare comp);
+    constexpr void reverse() noexcept;
 };
 
 
@@ -153,26 +153,26 @@ template <class InputIterator, class Allocator = allocator<typename iterator_tra
     -> list<typename iterator_traits<InputIterator>::value_type, Allocator>;  // C++17
 
 template <class T, class Alloc>
-    bool operator==(const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator==(const list<T,Alloc>& x, const list<T,Alloc>& y);
 template <class T, class Alloc>
-    bool operator< (const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator< (const list<T,Alloc>& x, const list<T,Alloc>& y);
 template <class T, class Alloc>
-    bool operator!=(const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator!=(const list<T,Alloc>& x, const list<T,Alloc>& y);
 template <class T, class Alloc>
-    bool operator> (const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator> (const list<T,Alloc>& x, const list<T,Alloc>& y);
 template <class T, class Alloc>
-    bool operator>=(const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator>=(const list<T,Alloc>& x, const list<T,Alloc>& y);
 template <class T, class Alloc>
-    bool operator<=(const list<T,Alloc>& x, const list<T,Alloc>& y);
+    constexpr bool operator<=(const list<T,Alloc>& x, const list<T,Alloc>& y);
 
 template <class T, class Alloc>
-    void swap(list<T,Alloc>& x, list<T,Alloc>& y)
+    constexpr void swap(list<T,Alloc>& x, list<T,Alloc>& y)
          noexcept(noexcept(x.swap(y)));
 
 template <class T, class Allocator, class U>
-    void erase(list<T, Allocator>& c, const U& value);       // C++20
+    constexpr void erase(list<T, Allocator>& c, const U& value);       // C++20
 template <class T, class Allocator, class Predicate>
-    void erase_if(list<T, Allocator>& c, Predicate pred);    // C++20
+    constexpr void erase_if(list<T, Allocator>& c, Predicate pred);    // C++20
 
 }  // std
 
