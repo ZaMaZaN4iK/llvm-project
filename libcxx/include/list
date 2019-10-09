@@ -337,7 +337,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    //_LIBCPP_CONSTEXPR_AFTER_CXX17
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     ~__list_iterator()
     {
         __get_db()->__erase_i(this);
@@ -480,7 +480,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    //_LIBCPP_CONSTEXPR_AFTER_CXX17
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     ~__list_const_iterator()
     {
         __get_db()->__erase_i(this);
@@ -633,7 +633,7 @@ protected:
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_imp(__node_allocator&& __a) _NOEXCEPT;
 #endif
-    /*_LIBCPP_CONSTEXPR_AFTER_CXX17*/ ~__list_imp();
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 ~__list_imp();
     _LIBCPP_CONSTEXPR_AFTER_CXX17 void clear() _NOEXCEPT;
     _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_CONSTEXPR_AFTER_CXX17 bool empty() const _NOEXCEPT {return __sz() == 0;}
@@ -771,7 +771,7 @@ inline __list_imp<_Tp, _Alloc>::__list_imp(__node_allocator&& __a) _NOEXCEPT
 #endif
 
 template <class _Tp, class _Alloc>
-/*_LIBCPP_CONSTEXPR_AFTER_CXX17*/
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 __list_imp<_Tp, _Alloc>::~__list_imp() {
   clear();
 #if _LIBCPP_DEBUG_LEVEL >= 2
@@ -1035,8 +1035,8 @@ public:
     }
 
 #ifndef _LIBCPP_CXX03_LANG
-     void push_front(value_type&& __x);
-     void push_back(value_type&& __x);
+     _LIBCPP_CONSTEXPR_AFTER_CXX17 void push_front(value_type&& __x);
+      _LIBCPP_CONSTEXPR_AFTER_CXX17 void push_back(value_type&& __x);
 
     template <class... _Args>
 #if _LIBCPP_STD_VER > 14
@@ -1148,7 +1148,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_CONSTEXPR_AFTER_CXX17 __hold_pointer __allocate_node(__node_allocator& __na) {
       __node_pointer __p = __node_alloc_traits::allocate(__na, 1);
-      __p->__prev_ = nullptr;
+      //__p->__prev_ = nullptr;
       return __hold_pointer(__p, __node_destructor(__na, 1));
     }
 
@@ -1687,6 +1687,7 @@ list<_Tp, _Alloc>::push_back(const value_type& __x)
 #ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::push_front(value_type&& __x)
 {
@@ -1699,6 +1700,7 @@ list<_Tp, _Alloc>::push_front(value_type&& __x)
 }
 
 template <class _Tp, class _Alloc>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 list<_Tp, _Alloc>::push_back(value_type&& __x)
 {

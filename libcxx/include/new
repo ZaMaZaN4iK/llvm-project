@@ -234,7 +234,7 @@ _LIBCPP_CONSTEXPR inline _LIBCPP_INLINE_VISIBILITY bool __is_overaligned_for_new
 #endif
 }
 
-inline _LIBCPP_INLINE_VISIBILITY void *__libcpp_allocate(size_t __size, size_t __align) {
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17 void *__libcpp_allocate(size_t __size, size_t __align) {
 #ifndef _LIBCPP_HAS_NO_ALIGNED_ALLOCATION
   if (__is_overaligned_for_new(__align)) {
     const align_val_t __align_val = static_cast<align_val_t>(__align);
