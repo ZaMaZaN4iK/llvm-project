@@ -777,10 +777,14 @@ static bool ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args, InputKind IK,
   Opts.DisableLLVMPasses = Args.hasArg(OPT_disable_llvm_passes);
   Opts.DisableLifetimeMarkers = Args.hasArg(OPT_disable_lifetimemarkers);
 
+  const llvm::Triple::ArchType DebugEntryValueArchs[] = {
+      llvm::Triple::x86, llvm::Triple::x86_64, llvm::Triple::aarch64,
+      llvm::Triple::arm, llvm::Triple::armeb};
+
   llvm::Triple T(TargetOpts.Triple);
-  llvm::Triple::ArchType Arch = T.getArch();
   if (Opts.OptimizationLevel > 0 &&
-      (Arch == llvm::Triple::x86 || Arch == llvm::Triple::x86_64))
+      Opts.getDebugInfo() >= codegenoptions::LimitedDebugInfo &&
+      llvm::is_contained(DebugEntryValueArchs, T.getArch()))
     Opts.EnableDebugEntryValues = Args.hasArg(OPT_femit_debug_entry_values);
 
   Opts.DisableO0ImplyOptNone = Args.hasArg(OPT_disable_O0_optnone);
@@ -1734,24 +1738,25 @@ static InputKind ParseFrontendArgs(FrontendOptions &Opts, ArgList &Args,
       StringRef ArgStr =
           Args.hasArg(OPT_iterface_stub_version_EQ)
               ? Args.getLastArgValue(OPT_iterface_stub_version_EQ)
-              : "";
-      llvm::Optional<frontend::ActionKind> ProgramAction =
-          llvm::StringSwitch<llvm::Optional<frontend::ActionKind>>(ArgStr)
-              .Case("experimental-ifs-v1", frontend::GenerateInterfaceIfsExpV1)
-              .Default(llvm::None);
-      if (!ProgramAction) {
+              : "experimental-ifs-v1";
+      if (ArgStr == "experimental-yaml-elf-v1" ||
+          ArgStr == "experimental-tapi-elf-v1") {
         std::string ErrorMessage =
             "Invalid interface stub format: " + ArgStr.str() +
-            ((ArgStr == "experimental-yaml-elf-v1" ||
-              ArgStr == "experimental-tapi-elf-v1")
-                 ? " is deprecated."
-                 : ".");
+            " is deprecated.";
+        Diags.Report(diag::err_drv_invalid_value)
+            << "Must specify a valid interface stub format type, ie: "
+               "-interface-stub-version=experimental-ifs-v1"
+            << ErrorMessage;
+      } else if (ArgStr != "experimental-ifs-v1") {
+        std::string ErrorMessage =
+            "Invalid interface stub format: " + ArgStr.str() + ".";
         Diags.Report(diag::err_drv_invalid_value)
             << "Must specify a valid interface stub format type, ie: "
                "-interface-stub-version=experimental-ifs-v1"
             << ErrorMessage;
       } else {
-        Opts.ProgramAction = *ProgramAction;
+        Opts.ProgramAction = frontend::GenerateInterfaceIfsExpV1;
       }
       break;
     }

@@ -1672,7 +1672,7 @@ void Clang::AddMIPSTargetArgs(const ArgList &Args,
   CmdArgs.push_back("-target-abi");
   CmdArgs.push_back(ABIName.data());
 
-  mips::FloatABI ABI = mips::getMipsFloatABI(D, Args);
+  mips::FloatABI ABI = mips::getMipsFloatABI(D, Args, Triple);
   if (ABI == mips::FloatABI::Soft) {
     // Floating point operations and argument passing are soft.
     CmdArgs.push_back("-msoft-float");
@@ -3683,32 +3683,15 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     } else if (JA.getType() == types::TY_LLVM_BC ||
                JA.getType() == types::TY_LTO_BC) {
       CmdArgs.push_back("-emit-llvm-bc");
-    } else if (JA.getType() == types::TY_IFS) {
+    } else if (JA.getType() == types::TY_IFS ||
+               JA.getType() == types::TY_IFS_CPP) {
       StringRef ArgStr =
           Args.hasArg(options::OPT_iterface_stub_version_EQ)
               ? Args.getLastArgValue(options::OPT_iterface_stub_version_EQ)
-              : "";
-      StringRef StubFormat =
-          llvm::StringSwitch<StringRef>(ArgStr)
-              .Case("experimental-ifs-v1", "experimental-ifs-v1")
-              .Default("");
-
-      if (StubFormat.empty()) {
-        std::string ErrorMessage =
-            "Invalid interface stub format: " + ArgStr.str() +
-            ((ArgStr == "experimental-yaml-elf-v1" ||
-              ArgStr == "experimental-tapi-elf-v1")
-                 ? " is deprecated."
-                 : ".");
-        D.Diag(diag::err_drv_invalid_value)
-            << "Must specify a valid interface stub format type, ie: "
-               "-interface-stub-version=experimental-ifs-v1"
-            << ErrorMessage;
-      }
-
+              : "experimental-ifs-v1";
       CmdArgs.push_back("-emit-interface-stubs");
       CmdArgs.push_back(
-          Args.MakeArgString(Twine("-interface-stub-version=") + StubFormat));
+          Args.MakeArgString(Twine("-interface-stub-version=") + ArgStr.str()));
     } else if (JA.getType() == types::TY_PP_Asm) {
       CmdArgs.push_back("-S");
     } else if (JA.getType() == types::TY_AST) {
@@ -6479,4 +6462,58 @@ void OffloadBundler::ConstructJobMultipleOutputs(
       JA, *this,
       TCArgs.MakeArgString(getToolChain().GetProgramPath(getShortName())),
       CmdArgs, None));
+}
+
+void OffloadWrapper::ConstructJob(Compilation &C, const JobAction &JA,
+                                  const InputInfo &Output,
+                                  const InputInfoList &Inputs,
+                                  const ArgList &Args,
+                                  const char *LinkingOutput) const {
+  ArgStringList CmdArgs;
+
+  const llvm::Triple &Triple = getToolChain().getEffectiveTriple();
+
+  // Add the "effective" target triple.
+  CmdArgs.push_back("-target");
+  CmdArgs.push_back(Args.MakeArgString(Triple.getTriple()));
+
+  assert(JA.getInputs().size() == Inputs.size() &&
+         "Not have inputs for all dependence actions??");
+
+  // Add offload targets. It is a comma-separated list of offload target
+  // triples.
+  SmallString<128> Targets;
+  Targets += "-offload-targets=";
+  for (unsigned I = 0; I < Inputs.size(); ++I) {
+    if (I)
+      Targets += ',';
+
+    // Get input's Offload Kind and ToolChain.
+    const auto *OA = cast<OffloadAction>(JA.getInputs()[I]);
+    assert(OA->hasSingleDeviceDependence(/*DoNotConsiderHostActions=*/true) &&
+           "Expected one device dependence!");
+    const ToolChain *DeviceTC = nullptr;
+    OA->doOnEachDependence([&DeviceTC](Action *, const ToolChain *TC,
+                                       const char *) { DeviceTC = TC; });
+
+    // And add it to the offload targets.
+    Targets += DeviceTC->getTriple().normalize();
+  }
+  CmdArgs.push_back(Args.MakeArgString(Targets));
+
+  // Add the output file name.
+  assert(Output.isFilename() && "Invalid output.");
+  CmdArgs.push_back("-o");
+  CmdArgs.push_back(Output.getFilename());
+
+  // Add inputs.
+  for (const InputInfo &I : Inputs) {
+    assert(I.isFilename() && "Invalid input.");
+    CmdArgs.push_back(I.getFilename());
+  }
+
+  C.addCommand(std::make_unique<Command>(
+    JA, *this,
+    Args.MakeArgString(getToolChain().GetProgramPath(getShortName())),
+    CmdArgs, Inputs));
 }

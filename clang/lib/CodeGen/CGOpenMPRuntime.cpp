@@ -11172,7 +11172,8 @@ template <>
 bool checkContext<OMPDeclareVariantAttr::CtxSetImplementation,
                   OMPDeclareVariantAttr::CtxVendor>(
     const OMPDeclareVariantAttr *A) {
-  return !A->getImplVendor().compare("llvm");
+  return llvm::all_of(A->implVendors(),
+                      [](StringRef S) { return !S.compare_lower("llvm"); });
 }
 
 static bool greaterCtxScore(ASTContext &Ctx, const Expr *LHS, const Expr *RHS) {
@@ -11186,7 +11187,7 @@ static bool greaterCtxScore(ASTContext &Ctx, const Expr *LHS, const Expr *RHS) {
     return false;
   llvm::APSInt LHSVal = LHS->EvaluateKnownConstInt(Ctx);
   llvm::APSInt RHSVal = RHS->EvaluateKnownConstInt(Ctx);
-  return llvm::APSInt::compareValues(LHSVal, RHSVal) <= 0;
+  return llvm::APSInt::compareValues(LHSVal, RHSVal) >= 0;
 }
 
 namespace {
@@ -11249,7 +11250,7 @@ static const FunctionDecl *getDeclareVariantFunction(ASTContext &Ctx,
     }
     // If the attribute matches the context, find the attribute with the highest
     // score.
-    if (SelectedAttr && (!TopMostAttr || Comparer(TopMostAttr, SelectedAttr)))
+    if (SelectedAttr && (!TopMostAttr || !Comparer(TopMostAttr, SelectedAttr)))
       TopMostAttr = SelectedAttr;
   }
   if (!TopMostAttr)

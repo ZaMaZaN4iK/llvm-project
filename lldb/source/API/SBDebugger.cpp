@@ -430,14 +430,14 @@ SBFile SBDebugger::GetErrorFile() {
 }
 
 void SBDebugger::SaveInputTerminalState() {
-  LLDB_RECORD_METHOD_NO_ARGS(void, SBDebugger, SaveInputTerminalState);
+  LLDB_RECORD_DUMMY_NO_ARGS(void, SBDebugger, SaveInputTerminalState);
 
   if (m_opaque_sp)
     m_opaque_sp->SaveInputTerminalState();
 }
 
 void SBDebugger::RestoreInputTerminalState() {
-  LLDB_RECORD_METHOD_NO_ARGS(void, SBDebugger, RestoreInputTerminalState);
+  LLDB_RECORD_DUMMY_NO_ARGS(void, SBDebugger, RestoreInputTerminalState);
 
   if (m_opaque_sp)
     m_opaque_sp->RestoreInputTerminalState();
@@ -467,10 +467,8 @@ void SBDebugger::HandleCommand(const char *command) {
 
     sb_interpreter.HandleCommand(command, result, false);
 
-    if (GetErrorFileHandle() != nullptr)
-      result.PutError(GetErrorFileHandle());
-    if (GetOutputFileHandle() != nullptr)
-      result.PutOutput(GetOutputFileHandle());
+    result.PutError(m_opaque_sp->GetErrorStream().GetFileSP());
+    result.PutOutput(m_opaque_sp->GetOutputStream().GetFileSP());
 
     if (!m_opaque_sp->GetAsyncExecution()) {
       SBProcess process(GetCommandInterpreter().GetProcess());
@@ -1093,7 +1091,7 @@ void SBDebugger::DispatchInput(const void *data, size_t data_len) {
 }
 
 void SBDebugger::DispatchInputInterrupt() {
-  LLDB_RECORD_METHOD_NO_ARGS(void, SBDebugger, DispatchInputInterrupt);
+  LLDB_RECORD_DUMMY_NO_ARGS(void, SBDebugger, DispatchInputInterrupt);
 
   if (m_opaque_sp)
     m_opaque_sp->DispatchInputInterrupt();
@@ -1253,8 +1251,7 @@ uint32_t SBDebugger::GetTerminalWidth() const {
 }
 
 void SBDebugger::SetTerminalWidth(uint32_t term_width) {
-  LLDB_RECORD_METHOD(void, SBDebugger, SetTerminalWidth, (uint32_t),
-                     term_width);
+  LLDB_RECORD_DUMMY(void, SBDebugger, SetTerminalWidth, (uint32_t), term_width);
 
   if (m_opaque_sp)
     m_opaque_sp->SetTerminalWidth(term_width);
