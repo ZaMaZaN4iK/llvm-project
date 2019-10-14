@@ -1068,11 +1068,11 @@ public:
 
 #ifndef _LIBCPP_CXX03_LANG
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void __emplace_back(_Arg&& __arg) { emplace_back(_VSTD::forward<_Arg>(__arg)); }
 #else
     _LIBCPP_INLINE_VISIBILITY
-    _LIBCPP_CONSTEXPR_AFTER_CXX17 void __emplace_back(value_type const& __arg) { push_back(__arg); }
+    void __emplace_back(value_type const& __arg) { push_back(__arg); }
 #endif
 
     _LIBCPP_CONSTEXPR_AFTER_CXX17 iterator insert(const_iterator __p, const value_type& __x);
