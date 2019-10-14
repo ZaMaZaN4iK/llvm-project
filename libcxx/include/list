@@ -266,9 +266,12 @@ struct __list_node_base
 
 template <class _Tp, class _VoidPtr>
 struct __list_node
-    : public __list_node_base<_Tp, _VoidPtr>
+        : public __list_node_base<_Tp, _VoidPtr>
 {
-    _Tp __value_;
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 __list_node() {}
+    _LIBCPP_CONSTEXPR_AFTER_CXX17 ~__list_node() {}
+
+    union { _Tp __value_; };
 
     typedef __list_node_base<_Tp, _VoidPtr> __base;
     typedef typename __base::__link_pointer __link_pointer;
@@ -1148,7 +1151,8 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_CONSTEXPR_AFTER_CXX17 __hold_pointer __allocate_node(__node_allocator& __na) {
       __node_pointer __p = __node_alloc_traits::allocate(__na, 1);
-      //__p->__prev_ = nullptr;
+        __node_alloc_traits::construct(__na, __p);
+      __p->__prev_ = nullptr;
       return __hold_pointer(__p, __node_destructor(__na, 1));
     }
 

@@ -256,6 +256,7 @@ inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17 void *__libcpp_al
 
 struct _DeallocateCaller {
   static inline _LIBCPP_INLINE_VISIBILITY
+  _LIBCPP_CONSTEXPR_AFTER_CXX17
   void __do_deallocate_handle_size_align(void *__ptr, size_t __size, size_t __align) {
 #if defined(_LIBCPP_HAS_NO_ALIGNED_ALLOCATION)
     ((void)__align);
@@ -286,7 +287,7 @@ struct _DeallocateCaller {
   }
 
  private:
-  static inline void __do_deallocate_handle_size(void *__ptr, size_t __size) {
+  static inline void _LIBCPP_CONSTEXPR_AFTER_CXX17 __do_deallocate_handle_size(void *__ptr, size_t __size) {
 #ifdef _LIBCPP_HAS_NO_SIZED_DEALLOCATION
     ((void)__size);
     return __do_call(__ptr);
@@ -327,7 +328,7 @@ private:
 #endif
   }
 
-  static inline void __do_call(void *__ptr) {
+  static _LIBCPP_CONSTEXPR_AFTER_CXX17 inline void __do_call(void *__ptr) {
 #ifdef _LIBCPP_HAS_NO_BUILTIN_OPERATOR_NEW_DELETE
     return ::operator delete(__ptr);
 #else
@@ -336,7 +337,7 @@ private:
   }
 };
 
-inline _LIBCPP_INLINE_VISIBILITY void __libcpp_deallocate(void* __ptr, size_t __size, size_t __align) {
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17 void __libcpp_deallocate(void* __ptr, size_t __size, size_t __align) {
   _DeallocateCaller::__do_deallocate_handle_size_align(__ptr, __size, __align);
 }
 
