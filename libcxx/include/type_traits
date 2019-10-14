@@ -585,7 +585,7 @@ addressof(_Tp& __x) _NOEXCEPT
 #else
 
 template <class _Tp>
-inline _LIBCPP_NO_CFI _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_NO_CFI _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 _Tp*
 addressof(_Tp& __x) _NOEXCEPT
 {
