@@ -1126,10 +1126,11 @@ public:
     _LIBCPP_CONSTEXPR_AFTER_CXX17 void merge(list& __c);
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX17
     void merge(list&& __c) {merge(__c);}
 
     template <class _Comp>
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         void merge(list&& __c, _Comp __comp) {merge(__c, __comp);}
 #endif
     template <class _Comp>
