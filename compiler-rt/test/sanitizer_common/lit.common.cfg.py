@@ -46,10 +46,10 @@ if default_tool_options_str:
   config.environment[tool_options] = default_tool_options_str
   default_tool_options_str += ':'
 
+extra_link_flags = []
+
 if config.host_os in ['Linux']:
-  extra_link_flags = ["-ldl"]
-else:
-  extra_link_flags = []
+  extra_link_flags += ["-ldl"]
 
 clang_cflags = config.debug_info_flags + tool_cflags + [config.target_cflags]
 clang_cflags += extra_link_flags
@@ -66,7 +66,7 @@ config.substitutions.append( ("%tool_options", tool_options) )
 config.substitutions.append( ('%env_tool_opts=',
                               'env ' + tool_options + '=' + default_tool_options_str))
 
-config.suffixes = ['.c', '.cc', '.cpp']
+config.suffixes = ['.c', '.cpp']
 
 if config.host_os not in ['Linux', 'Darwin', 'NetBSD', 'FreeBSD']:
   config.unsupported = True

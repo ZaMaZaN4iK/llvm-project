@@ -384,7 +384,7 @@ Platform::Platform(bool is_host)
       m_rsync_opts(), m_rsync_prefix(), m_supports_ssh(false), m_ssh_opts(),
       m_ignores_remote_hostname(false), m_trap_handlers(),
       m_calculated_trap_handlers(false),
-      m_module_cache(llvm::make_unique<ModuleCache>()) {
+      m_module_cache(std::make_unique<ModuleCache>()) {
   Log *log(lldb_private::GetLogIfAllCategoriesSet(LIBLLDB_LOG_OBJECT));
   LLDB_LOGF(log, "%p Platform::Platform()", static_cast<void *>(this));
 }
@@ -1226,15 +1226,15 @@ Status Platform::PutFile(const FileSpec &source, const FileSpec &destination,
   if (fs::is_symlink_file(source.GetPath()))
     source_open_options |= File::eOpenOptionDontFollowSymlinks;
 
-  File source_file;
-  Status error = FileSystem::Instance().Open(
-      source_file, source, source_open_options, lldb::eFilePermissionsUserRW);
-  uint32_t permissions = source_file.GetPermissions(error);
+  auto source_file = FileSystem::Instance().Open(source, source_open_options,
+                                                 lldb::eFilePermissionsUserRW);
+  if (!source_file)
+    return Status(source_file.takeError());
+  Status error;
+  uint32_t permissions = source_file.get()->GetPermissions(error);
   if (permissions == 0)
     permissions = lldb::eFilePermissionsFileDefault;
 
-  if (!source_file.IsValid())
-    return Status("PutFile: unable to open source file");
   lldb::user_id_t dest_file = OpenFile(
       destination, File::eOpenOptionCanCreate | File::eOpenOptionWrite |
                        File::eOpenOptionTruncate | File::eOpenOptionCloseOnExec,
@@ -1249,7 +1249,7 @@ Status Platform::PutFile(const FileSpec &source, const FileSpec &destination,
   uint64_t offset = 0;
   for (;;) {
     size_t bytes_read = buffer_sp->GetByteSize();
-    error = source_file.Read(buffer_sp->GetBytes(), bytes_read);
+    error = source_file.get()->Read(buffer_sp->GetBytes(), bytes_read);
     if (error.Fail() || bytes_read == 0)
       break;
 
@@ -1262,7 +1262,7 @@ Status Platform::PutFile(const FileSpec &source, const FileSpec &destination,
     if (bytes_written != bytes_read) {
       // We didn't write the correct number of bytes, so adjust the file
       // position in the source file we are reading from...
-      source_file.SeekFromStart(offset);
+      source_file.get()->SeekFromStart(offset);
     }
   }
   CloseFile(dest_file, error);
@@ -1628,7 +1628,7 @@ Status Platform::DownloadModuleSlice(const FileSpec &src_file_spec,
   Status error;
 
   std::error_code EC;
-  llvm::raw_fd_ostream dst(dst_file_spec.GetPath(), EC, llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream dst(dst_file_spec.GetPath(), EC, llvm::sys::fs::OF_None);
   if (EC) {
     error.SetErrorStringWithFormat("unable to open destination file: %s",
                                    dst_file_spec.GetPath().c_str());
@@ -1796,8 +1796,7 @@ lldb::ProcessSP Platform::ConnectProcess(llvm::StringRef connect_url,
   if (!process_sp)
     return nullptr;
 
-  error =
-      process_sp->ConnectRemote(debugger.GetOutputFile().get(), connect_url);
+  error = process_sp->ConnectRemote(&debugger.GetOutputStream(), connect_url);
   if (error.Fail())
     return nullptr;
 

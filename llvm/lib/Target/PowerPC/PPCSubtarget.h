@@ -210,7 +210,11 @@ public:
   /// instructions, regardless of whether we are in 32-bit or 64-bit mode.
   bool has64BitSupport() const { return Has64BitSupport; }
   // useSoftFloat - Return true if soft-float option is turned on.
-  bool useSoftFloat() const { return !HasHardFloat; }
+  bool useSoftFloat() const {
+    if (isAIXABI() && !HasHardFloat)
+      report_fatal_error("soft-float is not yet supported on AIX.");
+    return !HasHardFloat;
+  }
 
   /// use64BitRegs - Return true if in 64-bit mode or if we should use 64-bit
   /// registers in 32-bit mode when possible.  This can only true if
@@ -316,6 +320,9 @@ public:
   bool isSVR4ABI() const { return !isDarwinABI() && !isAIXABI(); }
   bool isELFv2ABI() const;
 
+  bool is64BitELFABI() const { return  isSVR4ABI() && isPPC64(); }
+  bool is32BitELFABI() const { return  isSVR4ABI() && !isPPC64(); }
+
   /// Originally, this function return hasISEL(). Now we always enable it,
   /// but may expand the ISEL instruction later.
   bool enableEarlyIfConversion() const override { return true; }
@@ -337,9 +344,8 @@ public:
 
   bool enableSubRegLiveness() const override;
 
-  /// classifyGlobalReference - Classify a global variable reference for the
-  /// current subtarget accourding to how we should reference it.
-  unsigned char classifyGlobalReference(const GlobalValue *GV) const;
+  /// True if the GV will be accessed via an indirect symbol.
+  bool isGVIndirectSymbol(const GlobalValue *GV) const;
 
   bool isXRaySupported() const override { return IsPPC64 && IsLittleEndian; }
 };

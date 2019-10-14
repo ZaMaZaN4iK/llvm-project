@@ -119,11 +119,11 @@ TEST(SwapIndexTest, OldIndexRecycled) {
   auto Token = std::make_shared<int>();
   std::weak_ptr<int> WeakToken = Token;
 
-  SwapIndex S(llvm::make_unique<MemIndex>(SymbolSlab(), RefSlab(),
+  SwapIndex S(std::make_unique<MemIndex>(SymbolSlab(), RefSlab(),
                                           RelationSlab(), std::move(Token),
                                           /*BackingDataSize=*/0));
   EXPECT_FALSE(WeakToken.expired());      // Current MemIndex keeps it alive.
-  S.reset(llvm::make_unique<MemIndex>()); // Now the MemIndex is destroyed.
+  S.reset(std::make_unique<MemIndex>()); // Now the MemIndex is destroyed.
   EXPECT_TRUE(WeakToken.expired());       // So the token is too.
 }
 
@@ -411,6 +411,16 @@ TEST(MergeIndexTest, Refs) {
               ElementsAre(Pair(
                   _, ElementsAre(AnyOf(FileURI("unittest:///test.cc"),
                                        FileURI("unittest:///test2.cc"))))));
+}
+
+TEST(MergeIndexTest, NonDocumentation) {
+  Symbol L, R;
+  L.ID = R.ID = SymbolID("x");
+  L.Definition.FileURI = "file:/x.h";
+  R.Documentation = "Forward declarations because x.h is too big to include";
+
+  Symbol M = mergeSymbol(L, R);
+  EXPECT_EQ(M.Documentation, "");
 }
 
 MATCHER_P2(IncludeHeaderWithRef, IncludeHeader, References, "") {

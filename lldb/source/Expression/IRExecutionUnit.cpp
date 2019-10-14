@@ -316,7 +316,7 @@ void IRExecutionUnit::GetRunnableInfo(Status &error, lldb::addr_t &func_addr,
   };
 
   if (process_sp->GetTarget().GetEnableSaveObjects()) {
-    m_object_cache_up = llvm::make_unique<ObjectDumper>();
+    m_object_cache_up = std::make_unique<ObjectDumper>();
     m_execution_engine_up->setObjectCache(m_object_cache_up.get());
   }
 
@@ -669,7 +669,7 @@ FindBestAlternateMangledName(ConstString demangled,
   std::vector<ConstString> param_matches;
   for (size_t i = 0; i < alternates.size(); i++) {
     ConstString alternate_mangled_name = alternates[i];
-    Mangled mangled(alternate_mangled_name, true);
+    Mangled mangled(alternate_mangled_name);
     ConstString demangled = mangled.GetDemangledName(lang_type);
 
     CPlusPlusLanguage::MethodName alternate_cpp_name(demangled);
@@ -717,7 +717,7 @@ void IRExecutionUnit::CollectCandidateCPlusPlusNames(
     ConstString name = C_spec.name;
 
     if (CPlusPlusLanguage::IsCPPMangledName(name.GetCString())) {
-      Mangled mangled(name, true);
+      Mangled mangled(name);
       ConstString demangled =
           mangled.GetDemangledName(lldb::eLanguageTypeC_plus_plus);
 

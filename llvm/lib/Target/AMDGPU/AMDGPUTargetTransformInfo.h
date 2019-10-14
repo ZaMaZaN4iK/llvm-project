@@ -46,10 +46,18 @@ class AMDGPUTTIImpl final : public BasicTTIImplBase<AMDGPUTTIImpl> {
 
   Triple TargetTriple;
 
+  const TargetSubtargetInfo *ST;
+  const TargetLoweringBase *TLI;
+
+  const TargetSubtargetInfo *getST() const { return ST; }
+  const TargetLoweringBase *getTLI() const { return TLI; }
+
 public:
   explicit AMDGPUTTIImpl(const AMDGPUTargetMachine *TM, const Function &F)
-    : BaseT(TM, F.getParent()->getDataLayout()),
-      TargetTriple(TM->getTargetTriple()) {}
+      : BaseT(TM, F.getParent()->getDataLayout()),
+        TargetTriple(TM->getTargetTriple()),
+        ST(static_cast<const GCNSubtarget *>(TM->getSubtargetImpl(F))),
+        TLI(ST->getTargetLowering()) {}
 
   void getUnrollingPreferences(Loop *L, ScalarEvolution &SE,
                                TTI::UnrollingPreferences &UP);
@@ -182,6 +190,11 @@ public:
       return -1;
     return AMDGPUAS::FLAT_ADDRESS;
   }
+
+  bool collectFlatAddressOperands(SmallVectorImpl<int> &OpIndexes,
+                                  Intrinsic::ID IID) const;
+  bool rewriteIntrinsicWithAddressSpace(IntrinsicInst *II,
+                                        Value *OldV, Value *NewV) const;
 
   unsigned getVectorSplitCost() { return 0; }
 

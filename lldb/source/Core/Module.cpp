@@ -292,7 +292,7 @@ ObjectFile *Module::GetMemoryObjectFile(const lldb::ProcessSP &process_sp,
     std::lock_guard<std::recursive_mutex> guard(m_mutex);
     if (process_sp) {
       m_did_load_objfile = true;
-      auto data_up = llvm::make_unique<DataBufferHeap>(size_to_read, 0);
+      auto data_up = std::make_unique<DataBufferHeap>(size_to_read, 0);
       Status readmem_error;
       const size_t bytes_read =
           process_sp->ReadMemory(header_addr, data_up->GetBytes(),
@@ -939,56 +939,49 @@ void Module::FindAddressesForLine(const lldb::TargetSP target_sp,
   }
 }
 
-size_t Module::FindTypes_Impl(
+void Module::FindTypes_Impl(
     ConstString name, const CompilerDeclContext *parent_decl_ctx,
-    bool append, size_t max_matches,
+    size_t max_matches,
     llvm::DenseSet<lldb_private::SymbolFile *> &searched_symbol_files,
     TypeMap &types) {
   static Timer::Category func_cat(LLVM_PRETTY_FUNCTION);
   Timer scoped_timer(func_cat, LLVM_PRETTY_FUNCTION);
   if (SymbolFile *symbols = GetSymbolFile())
-    return symbols->FindTypes(name, parent_decl_ctx, append, max_matches,
-                              searched_symbol_files, types);
-  return 0;
+    symbols->FindTypes(name, parent_decl_ctx, max_matches,
+                       searched_symbol_files, types);
 }
 
-size_t Module::FindTypesInNamespace(ConstString type_name,
-                                    const CompilerDeclContext *parent_decl_ctx,
-                                    size_t max_matches, TypeList &type_list) {
-  const bool append = true;
+void Module::FindTypesInNamespace(ConstString type_name,
+                                  const CompilerDeclContext *parent_decl_ctx,
+                                  size_t max_matches, TypeList &type_list) {
   TypeMap types_map;
   llvm::DenseSet<lldb_private::SymbolFile *> searched_symbol_files;
-  size_t num_types =
-      FindTypes_Impl(type_name, parent_decl_ctx, append, max_matches,
-                     searched_symbol_files, types_map);
-  if (num_types > 0) {
+  FindTypes_Impl(type_name, parent_decl_ctx, max_matches, searched_symbol_files,
+                 types_map);
+  if (types_map.GetSize()) {
     SymbolContext sc;
     sc.module_sp = shared_from_this();
     sc.SortTypeList(types_map, type_list);
   }
-  return num_types;
 }
 
 lldb::TypeSP Module::FindFirstType(const SymbolContext &sc,
                                    ConstString name, bool exact_match) {
   TypeList type_list;
   llvm::DenseSet<lldb_private::SymbolFile *> searched_symbol_files;
-  const size_t num_matches =
-      FindTypes(name, exact_match, 1, searched_symbol_files, type_list);
-  if (num_matches)
+  FindTypes(name, exact_match, 1, searched_symbol_files, type_list);
+  if (type_list.GetSize())
     return type_list.GetTypeAtIndex(0);
   return TypeSP();
 }
 
-size_t Module::FindTypes(
+void Module::FindTypes(
     ConstString name, bool exact_match, size_t max_matches,
     llvm::DenseSet<lldb_private::SymbolFile *> &searched_symbol_files,
     TypeList &types) {
-  size_t num_matches = 0;
   const char *type_name_cstr = name.GetCString();
   llvm::StringRef type_scope;
   llvm::StringRef type_basename;
-  const bool append = true;
   TypeClass type_class = eTypeClassAny;
   TypeMap typesmap;
 
@@ -1001,63 +994,65 @@ size_t Module::FindTypes(
     exact_match = type_scope.consume_front("::");
 
     ConstString type_basename_const_str(type_basename);
-    if (FindTypes_Impl(type_basename_const_str, nullptr, append, max_matches,
-                       searched_symbol_files, typesmap)) {
+    FindTypes_Impl(type_basename_const_str, nullptr, max_matches,
+                   searched_symbol_files, typesmap);
+    if (typesmap.GetSize())
       typesmap.RemoveMismatchedTypes(type_scope, type_basename, type_class,
                                      exact_match);
-      num_matches = typesmap.GetSize();
-    }
   } else {
     // The type is not in a namespace/class scope, just search for it by
     // basename
     if (type_class != eTypeClassAny && !type_basename.empty()) {
       // The "type_name_cstr" will have been modified if we have a valid type
       // class prefix (like "struct", "class", "union", "typedef" etc).
-      FindTypes_Impl(ConstString(type_basename), nullptr, append, UINT_MAX,
+      FindTypes_Impl(ConstString(type_basename), nullptr, UINT_MAX,
                      searched_symbol_files, typesmap);
       typesmap.RemoveMismatchedTypes(type_scope, type_basename, type_class,
                                      exact_match);
-      num_matches = typesmap.GetSize();
     } else {
-      num_matches = FindTypes_Impl(name, nullptr, append, UINT_MAX,
-                                   searched_symbol_files, typesmap);
+      FindTypes_Impl(name, nullptr, UINT_MAX, searched_symbol_files, typesmap);
       if (exact_match) {
         std::string name_str(name.AsCString(""));
         typesmap.RemoveMismatchedTypes(type_scope, name_str, type_class,
                                        exact_match);
-        num_matches = typesmap.GetSize();
       }
     }
   }
-  if (num_matches > 0) {
+  if (typesmap.GetSize()) {
     SymbolContext sc;
     sc.module_sp = shared_from_this();
     sc.SortTypeList(typesmap, types);
   }
-  return num_matches;
 }
 
-SymbolVendor *Module::GetSymbolVendor(bool can_create,
-                                      lldb_private::Stream *feedback_strm) {
-  if (!m_did_load_symbol_vendor.load()) {
+void Module::FindTypes(llvm::ArrayRef<CompilerContext> pattern,
+                       LanguageSet languages, TypeMap &types) {
+  static Timer::Category func_cat(LLVM_PRETTY_FUNCTION);
+  Timer scoped_timer(func_cat, LLVM_PRETTY_FUNCTION);
+  if (SymbolFile *symbols = GetSymbolFile())
+    symbols->FindTypes(pattern, languages, types);
+}
+
+SymbolFile *Module::GetSymbolFile(bool can_create, Stream *feedback_strm) {
+  if (!m_did_load_symfile.load()) {
     std::lock_guard<std::recursive_mutex> guard(m_mutex);
-    if (!m_did_load_symbol_vendor.load() && can_create) {
+    if (!m_did_load_symfile.load() && can_create) {
       ObjectFile *obj_file = GetObjectFile();
       if (obj_file != nullptr) {
         static Timer::Category func_cat(LLVM_PRETTY_FUNCTION);
         Timer scoped_timer(func_cat, LLVM_PRETTY_FUNCTION);
         m_symfile_up.reset(
             SymbolVendor::FindPlugin(shared_from_this(), feedback_strm));
-        m_did_load_symbol_vendor = true;
+        m_did_load_symfile = true;
       }
     }
   }
-  return m_symfile_up.get();
+  return m_symfile_up ? m_symfile_up->GetSymbolFile() : nullptr;
 }
 
-SymbolFile *Module::GetSymbolFile(bool can_create, Stream *feedback_strm) {
-  if (SymbolVendor *vendor = GetSymbolVendor(can_create, feedback_strm))
-    return vendor->GetSymbolFile();
+Symtab *Module::GetSymtab() {
+  if (SymbolFile *symbols = GetSymbolFile())
+    return symbols->GetSymtab();
   return nullptr;
 }
 
@@ -1231,9 +1226,8 @@ void Module::Dump(Stream *s) {
   if (objfile)
     objfile->Dump(s);
 
-  SymbolVendor *symbols = GetSymbolVendor();
-  if (symbols)
-    symbols->Dump(s);
+  if (SymbolFile *symbols = GetSymbolFile())
+    symbols->Dump(*s);
 
   s->IndentLess();
 }
@@ -1299,7 +1293,7 @@ UnwindTable &Module::GetUnwindTable() {
 
 SectionList *Module::GetUnifiedSectionList() {
   if (!m_sections_up)
-    m_sections_up = llvm::make_unique<SectionList>();
+    m_sections_up = std::make_unique<SectionList>();
   return m_sections_up.get();
 }
 
@@ -1309,13 +1303,9 @@ const Symbol *Module::FindFirstSymbolWithNameAndType(ConstString name,
   Timer scoped_timer(
       func_cat, "Module::FindFirstSymbolWithNameAndType (name = %s, type = %i)",
       name.AsCString(), symbol_type);
-  SymbolVendor *sym_vendor = GetSymbolVendor();
-  if (sym_vendor) {
-    Symtab *symtab = sym_vendor->GetSymtab();
-    if (symtab)
-      return symtab->FindFirstSymbolWithNameAndType(
-          name, symbol_type, Symtab::eDebugAny, Symtab::eVisibilityAny);
-  }
+  if (Symtab *symtab = GetSymtab())
+    return symtab->FindFirstSymbolWithNameAndType(
+        name, symbol_type, Symtab::eDebugAny, Symtab::eVisibilityAny);
   return nullptr;
 }
 void Module::SymbolIndicesToSymbolContextList(
@@ -1343,12 +1333,8 @@ size_t Module::FindFunctionSymbols(ConstString name,
   Timer scoped_timer(func_cat,
                      "Module::FindSymbolsFunctions (name = %s, mask = 0x%8.8x)",
                      name.AsCString(), name_type_mask);
-  SymbolVendor *sym_vendor = GetSymbolVendor();
-  if (sym_vendor) {
-    Symtab *symtab = sym_vendor->GetSymtab();
-    if (symtab)
-      return symtab->FindFunctionSymbols(name, name_type_mask, sc_list);
-  }
+  if (Symtab *symtab = GetSymtab())
+    return symtab->FindFunctionSymbols(name, name_type_mask, sc_list);
   return 0;
 }
 
@@ -1363,14 +1349,10 @@ size_t Module::FindSymbolsWithNameAndType(ConstString name,
       func_cat, "Module::FindSymbolsWithNameAndType (name = %s, type = %i)",
       name.AsCString(), symbol_type);
   const size_t initial_size = sc_list.GetSize();
-  SymbolVendor *sym_vendor = GetSymbolVendor();
-  if (sym_vendor) {
-    Symtab *symtab = sym_vendor->GetSymtab();
-    if (symtab) {
-      std::vector<uint32_t> symbol_indexes;
-      symtab->FindAllSymbolsWithNameAndType(name, symbol_type, symbol_indexes);
-      SymbolIndicesToSymbolContextList(symtab, symbol_indexes, sc_list);
-    }
+  if (Symtab *symtab = GetSymtab()) {
+    std::vector<uint32_t> symbol_indexes;
+    symtab->FindAllSymbolsWithNameAndType(name, symbol_type, symbol_indexes);
+    SymbolIndicesToSymbolContextList(symtab, symbol_indexes, sc_list);
   }
   return sc_list.GetSize() - initial_size;
 }
@@ -1387,16 +1369,12 @@ size_t Module::FindSymbolsMatchingRegExAndType(const RegularExpression &regex,
       "Module::FindSymbolsMatchingRegExAndType (regex = %s, type = %i)",
       regex.GetText().str().c_str(), symbol_type);
   const size_t initial_size = sc_list.GetSize();
-  SymbolVendor *sym_vendor = GetSymbolVendor();
-  if (sym_vendor) {
-    Symtab *symtab = sym_vendor->GetSymtab();
-    if (symtab) {
-      std::vector<uint32_t> symbol_indexes;
-      symtab->FindAllSymbolsMatchingRexExAndType(
-          regex, symbol_type, Symtab::eDebugAny, Symtab::eVisibilityAny,
-          symbol_indexes);
-      SymbolIndicesToSymbolContextList(symtab, symbol_indexes, sc_list);
-    }
+  if (Symtab *symtab = GetSymtab()) {
+    std::vector<uint32_t> symbol_indexes;
+    symtab->FindAllSymbolsMatchingRexExAndType(
+        regex, symbol_type, Symtab::eDebugAny, Symtab::eVisibilityAny,
+        symbol_indexes);
+    SymbolIndicesToSymbolContextList(symtab, symbol_indexes, sc_list);
   }
   return sc_list.GetSize() - initial_size;
 }
@@ -1478,7 +1456,7 @@ void Module::SetSymbolFileFileSpec(const FileSpec &file) {
   }
   m_symfile_spec = file;
   m_symfile_up.reset();
-  m_did_load_symbol_vendor = false;
+  m_did_load_symfile = false;
 }
 
 bool Module::IsExecutable() {
@@ -1641,6 +1619,26 @@ bool Module::RemapSourceFile(llvm::StringRef path,
                              std::string &new_path) const {
   std::lock_guard<std::recursive_mutex> guard(m_mutex);
   return m_source_mappings.RemapPath(path, new_path);
+}
+
+bool Module::MergeArchitecture(const ArchSpec &arch_spec) {
+  if (!arch_spec.IsValid())
+    return false;
+  LLDB_LOG(GetLogIfAllCategoriesSet(LIBLLDB_LOG_OBJECT | LIBLLDB_LOG_MODULES),
+           "module has arch %s, merging/replacing with arch %s",
+           m_arch.GetTriple().getTriple().c_str(),
+           arch_spec.GetTriple().getTriple().c_str());
+  if (!m_arch.IsCompatibleMatch(arch_spec)) {
+    // The new architecture is different, we just need to replace it.
+    return SetArchitecture(arch_spec);
+  }
+
+  // Merge bits from arch_spec into "merged_arch" and set our architecture.
+  ArchSpec merged_arch(m_arch);
+  merged_arch.MergeFrom(arch_spec);
+  // SetArchitecture() is a no-op if m_arch is already valid.
+  m_arch = ArchSpec();
+  return SetArchitecture(merged_arch);
 }
 
 llvm::VersionTuple Module::GetVersion() {

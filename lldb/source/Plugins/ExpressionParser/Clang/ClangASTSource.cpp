@@ -9,6 +9,7 @@
 #include "ClangASTSource.h"
 
 #include "ASTDumper.h"
+#include "ClangDeclVendor.h"
 #include "ClangModulesDeclVendor.h"
 
 #include "lldb/Core/Module.h"
@@ -18,7 +19,6 @@
 #include "lldb/Symbol/CompilerDeclContext.h"
 #include "lldb/Symbol/Function.h"
 #include "lldb/Symbol/SymbolFile.h"
-#include "lldb/Symbol/SymbolVendor.h"
 #include "lldb/Symbol/TaggedASTType.h"
 #include "lldb/Target/Target.h"
 #include "lldb/Utility/Log.h"
@@ -84,9 +84,9 @@ void ClangASTSource::InstallASTContext(clang::ASTContext &ast_context,
                      &type_system_or_err.get())) {
         lldbassert(module_ast_ctx->getASTContext());
         lldbassert(module_ast_ctx->getFileManager());
-        sources.push_back({*module_ast_ctx->getASTContext(),
-                           *module_ast_ctx->getFileManager(),
-                           module_ast_ctx->GetOriginMap()});
+        sources.emplace_back(*module_ast_ctx->getASTContext(),
+                             *module_ast_ctx->getFileManager(),
+                             module_ast_ctx->GetOriginMap());
       }
     }
 
@@ -101,17 +101,14 @@ void ClangASTSource::InstallASTContext(clang::ASTContext &ast_context,
       if (!language_runtime)
         break;
 
-      DeclVendor *runtime_decl_vendor = language_runtime->GetDeclVendor();
-
-      if (!runtime_decl_vendor)
-        break;
-
-      sources.push_back(runtime_decl_vendor->GetImporterSource());
+      if (auto *runtime_decl_vendor = llvm::dyn_cast_or_null<ClangDeclVendor>(
+              language_runtime->GetDeclVendor())) {
+        sources.push_back(runtime_decl_vendor->GetImporterSource());
+      }
     } while (false);
 
     do {
-      DeclVendor *modules_decl_vendor =
-          m_target->GetClangModulesDeclVendor();
+      auto *modules_decl_vendor = m_target->GetClangModulesDeclVendor();
 
       if (!modules_decl_vendor)
         break;
@@ -132,11 +129,9 @@ void ClangASTSource::InstallASTContext(clang::ASTContext &ast_context,
                          *scratch_ast_context->getFileManager(),
                          scratch_ast_context->GetOriginMap()});
     }
-    while (false)
-      ;
 
     m_merger_up =
-        llvm::make_unique<clang::ExternalASTMerger>(target, sources);
+        std::make_unique<clang::ExternalASTMerger>(target, sources);
   } else {
     m_ast_importer_sp->InstallMapCompleter(&ast_context, *this);
   }
@@ -652,6 +647,20 @@ void ClangASTSource::FindExternalLexicalDecls(
 
         m_ast_importer_sp->RequireCompleteType(copied_field_type);
       }
+      auto decl_context_non_const = const_cast<DeclContext *>(decl_context);
+
+      // The decl ended up in the wrong DeclContext. Let's fix that so
+      // the decl we copied will actually be found.
+      // FIXME: This is a horrible hack that shouldn't be necessary. However
+      // it seems our current setup sometimes fails to copy decls to the right
+      // place. See rdar://55129537.
+      if (copied_decl->getDeclContext() != decl_context) {
+        assert(copied_decl->getDeclContext()->containsDecl(copied_decl));
+        copied_decl->getDeclContext()->removeDecl(copied_decl);
+        copied_decl->setDeclContext(decl_context_non_const);
+        assert(!decl_context_non_const->containsDecl(copied_decl));
+        decl_context_non_const->addDeclInternal(copied_decl);
+      }
     } else {
       SkippedDecls = true;
     }
@@ -815,11 +824,8 @@ void ClangASTSource::FindExternalVisibleDecls(
   if (module_sp && namespace_decl) {
     CompilerDeclContext found_namespace_decl;
 
-    SymbolVendor *symbol_vendor = module_sp->GetSymbolVendor();
-
-    if (symbol_vendor) {
-      found_namespace_decl =
-          symbol_vendor->FindNamespace(name, &namespace_decl);
+    if (SymbolFile *symbol_file = module_sp->GetSymbolFile()) {
+      found_namespace_decl = symbol_file->FindNamespace(name, &namespace_decl);
 
       if (found_namespace_decl) {
         context.m_namespace_map->push_back(
@@ -843,13 +849,12 @@ void ClangASTSource::FindExternalVisibleDecls(
 
       CompilerDeclContext found_namespace_decl;
 
-      SymbolVendor *symbol_vendor = image->GetSymbolVendor();
+      SymbolFile *symbol_file = image->GetSymbolFile();
 
-      if (!symbol_vendor)
+      if (!symbol_file)
         continue;
 
-      found_namespace_decl =
-          symbol_vendor->FindNamespace(name, &namespace_decl);
+      found_namespace_decl = symbol_file->FindNamespace(name, &namespace_decl);
 
       if (found_namespace_decl) {
         context.m_namespace_map->push_back(
@@ -978,7 +983,8 @@ void ClangASTSource::FindExternalVisibleDecls(
         uint32_t max_matches = 1;
         std::vector<clang::NamedDecl *> decls;
 
-        if (!decl_vendor->FindDecls(name, append, max_matches, decls))
+        auto *clang_decl_vendor = llvm::cast<ClangDeclVendor>(decl_vendor);
+        if (!clang_decl_vendor->FindDecls(name, append, max_matches, decls))
           break;
 
         if (log) {
@@ -1430,7 +1436,9 @@ void ClangASTSource::FindObjCMethodDecls(NameSearchContext &context) {
     uint32_t max_matches = 1;
     std::vector<clang::NamedDecl *> decls;
 
-    if (!decl_vendor->FindDecls(interface_name, append, max_matches, decls))
+    auto *clang_decl_vendor = llvm::cast<ClangDeclVendor>(decl_vendor);
+    if (!clang_decl_vendor->FindDecls(interface_name, append, max_matches,
+                                      decls))
       break;
 
     ObjCInterfaceDecl *runtime_interface_decl =
@@ -1619,7 +1627,8 @@ void ClangASTSource::FindObjCPropertyAndIvarDecls(NameSearchContext &context) {
     uint32_t max_matches = 1;
     std::vector<clang::NamedDecl *> decls;
 
-    if (!decl_vendor->FindDecls(class_name, append, max_matches, decls))
+    auto *clang_decl_vendor = llvm::cast<ClangDeclVendor>(decl_vendor);
+    if (!clang_decl_vendor->FindDecls(class_name, append, max_matches, decls))
       break;
 
     DeclFromUser<const ObjCInterfaceDecl> interface_decl_from_runtime(
@@ -1885,13 +1894,13 @@ void ClangASTSource::CompleteNamespaceMap(
       lldb::ModuleSP module_sp = i->first;
       CompilerDeclContext module_parent_namespace_decl = i->second;
 
-      SymbolVendor *symbol_vendor = module_sp->GetSymbolVendor();
+      SymbolFile *symbol_file = module_sp->GetSymbolFile();
 
-      if (!symbol_vendor)
+      if (!symbol_file)
         continue;
 
       found_namespace_decl =
-          symbol_vendor->FindNamespace(name, &module_parent_namespace_decl);
+          symbol_file->FindNamespace(name, &module_parent_namespace_decl);
 
       if (!found_namespace_decl)
         continue;
@@ -1917,13 +1926,13 @@ void ClangASTSource::CompleteNamespaceMap(
 
       CompilerDeclContext found_namespace_decl;
 
-      SymbolVendor *symbol_vendor = image->GetSymbolVendor();
+      SymbolFile *symbol_file = image->GetSymbolFile();
 
-      if (!symbol_vendor)
+      if (!symbol_file)
         continue;
 
       found_namespace_decl =
-          symbol_vendor->FindNamespace(name, &null_namespace_decl);
+          symbol_file->FindNamespace(name, &null_namespace_decl);
 
       if (!found_namespace_decl)
         continue;
@@ -2071,7 +2080,8 @@ CompilerType ClangASTSource::GuardedCopyType(const CompilerType &src_type) {
     // seems to be generating bad types on occasion.
     return CompilerType();
 
-  return CompilerType(m_ast_context, copied_qual_type);
+  return CompilerType(ClangASTContext::GetASTContext(m_ast_context),
+                      copied_qual_type.getAsOpaquePtr());
 }
 
 clang::NamedDecl *NameSearchContext::AddVarDecl(const CompilerType &type) {
@@ -2199,7 +2209,9 @@ clang::NamedDecl *NameSearchContext::AddGenericFunDecl() {
       proto_info));
 
   return AddFunDecl(
-      CompilerType(m_ast_source.m_ast_context, generic_function_type), true);
+      CompilerType(ClangASTContext::GetASTContext(m_ast_source.m_ast_context),
+                   generic_function_type.getAsOpaquePtr()),
+      true);
 }
 
 clang::NamedDecl *

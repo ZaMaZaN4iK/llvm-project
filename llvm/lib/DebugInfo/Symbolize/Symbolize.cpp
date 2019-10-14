@@ -205,7 +205,7 @@ bool checkFileCRC(StringRef Path, uint32_t CRCHash) {
       MemoryBuffer::getFileOrSTDIN(Path);
   if (!MB)
     return false;
-  return CRCHash == llvm::crc32(0, MB.get()->getBuffer());
+  return CRCHash == llvm::crc32(arrayRefFromStringRef(MB.get()->getBuffer()));
 }
 
 bool findDebugBinary(const std::string &OrigPath,
@@ -259,7 +259,11 @@ bool getGNUDebuglinkContents(const ObjectFile *Obj, std::string &DebugName,
     return false;
   for (const SectionRef &Section : Obj->sections()) {
     StringRef Name;
-    Section.getName(Name);
+    if (Expected<StringRef> NameOrErr = Section.getName())
+      Name = *NameOrErr;
+    else
+      consumeError(NameOrErr.takeError());
+
     Name = Name.substr(Name.find_first_not_of("._"));
     if (Name == "gnu_debuglink") {
       Expected<StringRef> ContentsOrErr = Section.getContents();
@@ -268,7 +272,7 @@ bool getGNUDebuglinkContents(const ObjectFile *Obj, std::string &DebugName,
         return false;
       }
       DataExtractor DE(*ContentsOrErr, Obj->isLittleEndian(), 0);
-      uint32_t Offset = 0;
+      uint64_t Offset = 0;
       if (const char *DebugNameStr = DE.getCStr(&Offset)) {
         // 4-byte align the offset.
         Offset = (Offset + 3) & ~0x3;
@@ -397,7 +401,7 @@ LLVMSymbolizer::getOrCreateObject(const std::string &Path,
       return I->second.get();
 
     Expected<std::unique_ptr<ObjectFile>> ObjOrErr =
-        UB->getObjectForArch(ArchName);
+        UB->getMachOObjectForArch(ArchName);
     if (!ObjOrErr) {
       ObjectForUBPathAndArch.emplace(std::make_pair(Path, ArchName),
                                      std::unique_ptr<ObjectFile>());
@@ -418,8 +422,8 @@ Expected<SymbolizableModule *>
 LLVMSymbolizer::createModuleInfo(const ObjectFile *Obj,
                                  std::unique_ptr<DIContext> Context,
                                  StringRef ModuleName) {
-  auto InfoOrErr =
-      SymbolizableObjectFile::create(Obj, std::move(Context));
+  auto InfoOrErr = SymbolizableObjectFile::create(Obj, std::move(Context),
+                                                  Opts.UntagAddresses);
   std::unique_ptr<SymbolizableModule> SymMod;
   if (InfoOrErr)
     SymMod = std::move(*InfoOrErr);

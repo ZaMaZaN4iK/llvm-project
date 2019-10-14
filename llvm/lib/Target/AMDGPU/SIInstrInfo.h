@@ -242,7 +242,7 @@ public:
     return commuteOpcode(MI.getOpcode());
   }
 
-  bool findCommutedOpIndices(MachineInstr &MI, unsigned &SrcOpIdx1,
+  bool findCommutedOpIndices(const MachineInstr &MI, unsigned &SrcOpIdx1,
                              unsigned &SrcOpIdx2) const override;
 
   bool findCommutedOpIndices(MCInstrDesc Desc, unsigned & SrcOpIdx0,
@@ -303,8 +303,7 @@ public:
 
   bool
   areMemAccessesTriviallyDisjoint(const MachineInstr &MIa,
-                                  const MachineInstr &MIb,
-                                  AliasAnalysis *AA = nullptr) const override;
+                                  const MachineInstr &MIb) const override;
 
   bool isFoldableCopy(const MachineInstr &MI) const;
 
@@ -576,6 +575,14 @@ public:
 
   bool isMAI(uint16_t Opcode) const {
     return get(Opcode).TSFlags & SIInstrFlags::IsMAI;
+  }
+
+  static bool isDOT(const MachineInstr &MI) {
+    return MI.getDesc().TSFlags & SIInstrFlags::IsDOT;
+  }
+
+  bool isDOT(uint16_t Opcode) const {
+    return get(Opcode).TSFlags & SIInstrFlags::IsDOT;
   }
 
   static bool isScalarUnit(const MachineInstr &MI) {
@@ -954,6 +961,19 @@ public:
 
   bool isBasicBlockPrologue(const MachineInstr &MI) const override;
 
+  MachineInstr *createPHIDestinationCopy(MachineBasicBlock &MBB,
+                                         MachineBasicBlock::iterator InsPt,
+                                         const DebugLoc &DL, Register Src,
+                                         Register Dst) const override;
+
+  MachineInstr *createPHISourceCopy(MachineBasicBlock &MBB,
+                                    MachineBasicBlock::iterator InsPt,
+                                    const DebugLoc &DL, Register Src,
+                                    Register SrcSubReg,
+                                    Register Dst) const override;
+
+  bool isWave32() const;
+
   /// Return a partially built integer add instruction without carry.
   /// Caller must add source operands.
   /// For pre-GFX9 it will generate unused carry destination operand.
@@ -962,6 +982,12 @@ public:
                                     MachineBasicBlock::iterator I,
                                     const DebugLoc &DL,
                                     unsigned DestReg) const;
+
+  MachineInstrBuilder getAddNoCarry(MachineBasicBlock &MBB,
+                                    MachineBasicBlock::iterator I,
+                                    const DebugLoc &DL,
+                                    Register DestReg,
+                                    RegScavenger &RS) const;
 
   static bool isKillTerminator(unsigned Opcode);
   const MCInstrDesc &getKillTerminatorFromPseudo(unsigned Opcode) const;

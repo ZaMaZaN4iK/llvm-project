@@ -16,7 +16,6 @@
 #include "lldb/Symbol/CompilerType.h"
 #include "lldb/Symbol/LineTable.h"
 #include "lldb/Symbol/SymbolFile.h"
-#include "lldb/Symbol/SymbolVendor.h"
 #include "lldb/Target/Language.h"
 #include "lldb/Utility/Log.h"
 #include "llvm/Support/Casting.h"
@@ -60,10 +59,11 @@ size_t FunctionInfo::MemorySize() const {
   return m_name.MemorySize() + m_declaration.MemorySize();
 }
 
-InlineFunctionInfo::InlineFunctionInfo(const char *name, const char *mangled,
+InlineFunctionInfo::InlineFunctionInfo(const char *name,
+                                       llvm::StringRef mangled,
                                        const Declaration *decl_ptr,
                                        const Declaration *call_decl_ptr)
-    : FunctionInfo(name, decl_ptr), m_mangled(ConstString(mangled), true),
+    : FunctionInfo(name, decl_ptr), m_mangled(mangled),
       m_call_decl(call_decl_ptr) {}
 
 InlineFunctionInfo::InlineFunctionInfo(ConstString name,
@@ -128,9 +128,14 @@ size_t InlineFunctionInfo::MemorySize() const {
 }
 
 //
-CallEdge::CallEdge(const char *symbol_name, lldb::addr_t return_pc)
-    : return_pc(return_pc), resolved(false) {
+CallEdge::CallEdge(const char *symbol_name, lldb::addr_t return_pc,
+                   CallSiteParameterArray parameters)
+    : return_pc(return_pc), parameters(std::move(parameters)), resolved(false) {
   lazy_callee.symbol_name = symbol_name;
+}
+
+llvm::ArrayRef<CallSiteParameter> CallEdge::GetCallSiteParameters() const {
+  return parameters;
 }
 
 void CallEdge::ParseSymbolFileAndResolve(ModuleList &images) {
@@ -169,6 +174,7 @@ void CallEdge::ParseSymbolFileAndResolve(ModuleList &images) {
 
 Function *CallEdge::GetCallee(ModuleList &images) {
   ParseSymbolFileAndResolve(images);
+  assert(resolved && "Did not resolve lazy callee");
   return lazy_callee.def;
 }
 
@@ -277,11 +283,25 @@ llvm::MutableArrayRef<CallEdge> Function::GetTailCallingEdges() {
   });
 }
 
+CallEdge *Function::GetCallEdgeForReturnAddress(addr_t return_pc,
+                                                Target &target) {
+  auto edges = GetCallEdges();
+  auto edge_it =
+      std::lower_bound(edges.begin(), edges.end(), return_pc,
+                       [&](const CallEdge &edge, addr_t pc) {
+                         return edge.GetReturnPCAddress(*this, target) < pc;
+                       });
+  if (edge_it == edges.end() ||
+      edge_it->GetReturnPCAddress(*this, target) != return_pc)
+    return nullptr;
+  return &const_cast<CallEdge &>(*edge_it);
+}
+
 Block &Function::GetBlock(bool can_create) {
   if (!m_block.BlockInfoHasBeenParsed() && can_create) {
     ModuleSP module_sp = CalculateSymbolContextModule();
     if (module_sp) {
-      module_sp->GetSymbolVendor()->ParseBlocksRecursive(*this);
+      module_sp->GetSymbolFile()->ParseBlocksRecursive(*this);
     } else {
       Host::SystemLog(Host::eSystemLogError,
                       "error: unable to find module "

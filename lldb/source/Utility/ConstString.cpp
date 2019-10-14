@@ -31,7 +31,10 @@ using namespace lldb_private;
 class Pool {
 public:
   typedef const char *StringPoolValueType;
-  typedef llvm::StringMap<StringPoolValueType, llvm::BumpPtrAllocator>
+  // BumpPtrAllocator allocates in 4KiB chunks, any larger C++ project is going
+  // to have megabytes of symbols, so allocate in larger chunks.
+  typedef llvm::BumpPtrAllocatorImpl<llvm::MallocAllocator, 1048576> Allocator;
+  typedef llvm::StringMap<StringPoolValueType, Allocator>
       StringPool;
   typedef llvm::StringMapEntry<StringPoolValueType> StringPoolEntryType;
 
@@ -57,23 +60,6 @@ public:
       return GetStringMapEntryFromKeyData(ccstr).getValue();
     }
     return nullptr;
-  }
-
-  bool SetMangledCounterparts(const char *key_ccstr, const char *value_ccstr) {
-    if (key_ccstr != nullptr && value_ccstr != nullptr) {
-      {
-        const uint8_t h = hash(llvm::StringRef(key_ccstr));
-        llvm::sys::SmartScopedWriter<false> wlock(m_string_pools[h].m_mutex);
-        GetStringMapEntryFromKeyData(key_ccstr).setValue(value_ccstr);
-      }
-      {
-        const uint8_t h = hash(llvm::StringRef(value_ccstr));
-        llvm::sys::SmartScopedWriter<false> wlock(m_string_pools[h].m_mutex);
-        GetStringMapEntryFromKeyData(value_ccstr).setValue(key_ccstr);
-      }
-      return true;
-    }
-    return false;
   }
 
   const char *GetConstCString(const char *cstr) {
@@ -169,7 +155,9 @@ protected:
 
   struct PoolEntry {
     mutable llvm::sys::SmartRWMutex<false> m_mutex;
-    StringPool m_string_map;
+    // StringMap by default starts with 16 buckets, any larger project is
+    // going to have many symbols, so start with a larger value.
+    StringPool m_string_map = StringPool( 65536 );
   };
 
   std::array<PoolEntry, 256> m_string_pools;

@@ -431,6 +431,11 @@ LLVM-specific variables
   passed to invocations of both so that the project is built using libc++
   instead of stdlibc++. Defaults to OFF.
 
+**LLVM_STATIC_LINK_CXX_STDLIB**:BOOL
+  Statically link to the C++ standard library if possible. This uses the flag
+  "-static-libstdc++", but a Clang host compiler will statically link to libc++
+  if used in conjuction with the **LLVM_ENABLE_LIBCXX** flag. Defaults to OFF.
+
 **LLVM_ENABLE_LLD**:BOOL
   This option is equivalent to `-DLLVM_USE_LINKER=lld`, except during a 2-stage
   build where a dependency is added from the first stage to the second ensuring
@@ -609,6 +614,10 @@ LLVM-specific variables
 
 **LLVM_ENABLE_BINDINGS**:BOOL
   If disabled, do not try to build the OCaml and go bindings.
+
+**LLVM_ENABLE_Z3_SOLVER**:BOOL
+  If enabled, the Z3 constraint solver is activated for the Clang static analyzer.
+  A recent version of the z3 library needs to be available on the system.
 
 CMake Caches
 ============

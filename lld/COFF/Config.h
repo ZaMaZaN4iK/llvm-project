@@ -18,6 +18,12 @@
 #include <set>
 #include <string>
 
+namespace llvm {
+namespace symbolize {
+class LLVMSymbolizer;
+}
+} // namespace llvm
+
 namespace lld {
 namespace coff {
 
@@ -122,6 +128,7 @@ struct Configuration {
   bool dll = false;
   StringRef implib;
   std::vector<Export> exports;
+  bool hadExplicitExports;
   std::set<std::string> delayLoads;
   std::map<std::string, int> dllOrder;
   Symbol *delayLoadHelper = nullptr;
@@ -189,6 +196,10 @@ struct Configuration {
   // Used for /thinlto-object-suffix-replace:
   std::pair<llvm::StringRef, llvm::StringRef> thinLTOObjectSuffixReplace;
 
+  // Used for /lto-obj-path:
+  llvm::StringRef ltoObjPath;
+
+  uint64_t align = 4096;
   uint64_t imageBase = -1;
   uint64_t fileAlign = 512;
   uint64_t stackReserve = 1024 * 1024;
@@ -221,6 +232,8 @@ struct Configuration {
   bool swaprunNet = false;
   bool thinLTOEmitImportsFiles;
   bool thinLTOIndexOnly;
+
+  llvm::symbolize::LLVMSymbolizer *symbolizer = nullptr;
 };
 
 extern Configuration *config;

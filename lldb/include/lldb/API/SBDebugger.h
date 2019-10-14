@@ -88,6 +88,24 @@ public:
 
   FILE *GetErrorFileHandle();
 
+  SBError SetInputFile(SBFile file);
+
+  SBError SetOutputFile(SBFile file);
+
+  SBError SetErrorFile(SBFile file);
+
+  SBError SetInputFile(FileSP file);
+
+  SBError SetOutputFile(FileSP file);
+
+  SBError SetErrorFile(FileSP file);
+
+  SBFile GetInputFile();
+
+  SBFile GetOutputFile();
+
+  SBFile GetErrorFile();
+
   void SaveInputTerminalState();
 
   void RestoreInputTerminalState();

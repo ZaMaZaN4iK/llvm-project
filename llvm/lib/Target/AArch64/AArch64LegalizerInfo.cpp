@@ -82,7 +82,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
 
   getActionDefinitionsBuilder(G_BSWAP)
       .legalFor({s32, s64, v4s32, v2s32, v2s64})
-      .clampScalar(0, s16, s64)
+      .clampScalar(0, s32, s64)
       .widenScalarToNextPow2(0);
 
   getActionDefinitionsBuilder({G_ADD, G_SUB, G_MUL, G_AND, G_OR, G_XOR})
@@ -112,6 +112,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
 
   getActionDefinitionsBuilder({G_SDIV, G_UDIV})
       .legalFor({s32, s64})
+      .libcallFor({s128})
       .clampScalar(0, s32, s64)
       .widenScalarToNextPow2(0)
       .scalarize(0);
@@ -123,8 +124,12 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
         return !SrcTy.isVector() && SrcTy.getSizeInBits() == 32 &&
                AmtTy.getSizeInBits() == 32;
       })
-      .legalFor(
-          {{s32, s32}, {s32, s64}, {s64, s64}, {v2s32, v2s32}, {v4s32, v4s32}})
+      .legalFor({{s32, s32},
+                 {s32, s64},
+                 {s64, s64},
+                 {v2s32, v2s32},
+                 {v4s32, v4s32},
+                 {v2s64, v2s64}})
       .clampScalar(1, s32, s64)
       .clampScalar(0, s32, s64)
       .minScalarSameAs(1, 0);
@@ -256,14 +261,12 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
       .legalForTypesWithMemDesc({{s32, p0, 8, 8},
                                  {s32, p0, 16, 8}})
       .clampScalar(0, s8, s64)
-      .widenScalarToNextPow2(0)
-      // TODO: We could support sum-of-pow2's but the lowering code doesn't know
-      //       how to do that yet.
-      .unsupportedIfMemSizeNotPow2()
+      .lowerIfMemSizeNotPow2()
       // Lower any any-extending loads left into G_ANYEXT and G_LOAD
       .lowerIf([=](const LegalityQuery &Query) {
         return Query.Types[0].getSizeInBits() != Query.MMODescrs[0].SizeInBits;
       })
+      .widenScalarToNextPow2(0)
       .clampMaxNumElements(0, s32, 2)
       .clampMaxNumElements(0, s64, 1)
       .customIf(IsPtrVecPred);
@@ -271,6 +274,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
   getActionDefinitionsBuilder(G_STORE)
       .legalForTypesWithMemDesc({{s8, p0, 8, 8},
                                  {s16, p0, 16, 8},
+                                 {s32, p0, 8, 8},
+                                 {s32, p0, 16, 8},
                                  {s32, p0, 32, 8},
                                  {s64, p0, 64, 8},
                                  {p0, p0, 64, 8},
@@ -282,10 +287,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
                                  {v4s32, p0, 128, 8},
                                  {v2s64, p0, 128, 8}})
       .clampScalar(0, s8, s64)
-      .widenScalarToNextPow2(0)
-      // TODO: We could support sum-of-pow2's but the lowering code doesn't know
-      //       how to do that yet.
-      .unsupportedIfMemSizeNotPow2()
+      .lowerIfMemSizeNotPow2()
       .lowerIf([=](const LegalityQuery &Query) {
         return Query.Types[0].isScalar() &&
                Query.Types[0].getSizeInBits() != Query.MMODescrs[0].SizeInBits;
@@ -344,7 +346,7 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
     unsigned DstSize = Query.Types[0].getSizeInBits();
 
     if (DstSize == 128 && !Query.Types[0].isVector())
-      return false; // Extending to a scalar s128 is not legal.
+      return false; // Extending to a scalar s128 needs narrowing.
     
     // Make sure that we have something that will fit in a register, and
     // make sure it's a power of 2.
@@ -366,12 +368,13 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
 
     return true;
   };
-  getActionDefinitionsBuilder({G_ZEXT, G_ANYEXT}).legalIf(ExtLegalFunc);
-  getActionDefinitionsBuilder(G_SEXT)
+  getActionDefinitionsBuilder({G_ZEXT, G_SEXT, G_ANYEXT})
       .legalIf(ExtLegalFunc)
       .clampScalar(0, s64, s64); // Just for s128, others are handled above.
 
   getActionDefinitionsBuilder(G_TRUNC).alwaysLegal();
+
+  getActionDefinitionsBuilder(G_SEXT_INREG).lower();
 
   // FP conversions
   getActionDefinitionsBuilder(G_FPTRUNC).legalFor(
@@ -607,6 +610,8 @@ AArch64LegalizerInfo::AArch64LegalizerInfo(const AArch64Subtarget &ST) {
     return Query.Types[0] == p0 && Query.Types[1] == s64;
   });
 
+  getActionDefinitionsBuilder(G_DYN_STACKALLOC).lower();
+
   computeTables();
   verify(*ST.getInstrInfo());
 }
@@ -689,7 +694,7 @@ bool AArch64LegalizerInfo::legalizeLoadStore(
   // legalized. In order to allow further legalization of the inst, we create
   // a new instruction and erase the existing one.
 
-  unsigned ValReg = MI.getOperand(0).getReg();
+  Register ValReg = MI.getOperand(0).getReg();
   const LLT ValTy = MRI.getType(ValReg);
 
   if (!ValTy.isVector() || !ValTy.getElementType().isPointer() ||
@@ -706,7 +711,7 @@ bool AArch64LegalizerInfo::legalizeLoadStore(
     auto Bitcast = MIRBuilder.buildBitcast({NewTy}, {ValReg});
     MIRBuilder.buildStore(Bitcast.getReg(0), MI.getOperand(1).getReg(), MMO);
   } else {
-    unsigned NewReg = MRI.createGenericVirtualRegister(NewTy);
+    Register NewReg = MRI.createGenericVirtualRegister(NewTy);
     auto NewLoad = MIRBuilder.buildLoad(NewReg, MI.getOperand(1).getReg(), MMO);
     MIRBuilder.buildBitcast({ValReg}, {NewLoad});
   }

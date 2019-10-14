@@ -21,7 +21,7 @@ define dso_local i32 @test(%struct.__s* %arg) local_unnamed_addr #0 !dbg !7 {
 entry:
   call void @llvm.dbg.value(metadata %struct.__s* %arg, metadata !24, metadata !DIExpression()), !dbg !25
   %0 = tail call [7 x i32]* @llvm.preserve.struct.access.index.p0a7i32.p0s_struct.__ss(%struct.__s* %arg, i32 0, i32 0), !dbg !26, !llvm.preserve.access.index !13
-  %1 = tail call i32* @llvm.preserve.array.access.index.p0i32.p0a7i32([7 x i32]* %0, i32 1, i32 1), !dbg !26
+  %1 = tail call i32* @llvm.preserve.array.access.index.p0i32.p0a7i32([7 x i32]* %0, i32 1, i32 1), !dbg !26, !llvm.preserve.access.index !19
   %2 = bitcast i32* %1 to i8*, !dbg !26
   %call = tail call i32 @get_value(i8* %2) #4, !dbg !27
   ret i32 %call, !dbg !28
@@ -38,12 +38,13 @@ entry:
 ; CHECK-NEXT:    .byte   0
 ; CHECK:         .ascii  "0:0:1"                 # string offset=[[ACCESS_STR:[0-9]+]]
 ; CHECK-NEXT:    .byte   0
-; CHECK:         .long   12                      # OffsetReloc
-; CHECK-NEXT:    .long   [[SEC_INDEX]]           # Offset reloc section string offset=[[SEC_INDEX]]
+; CHECK:         .long   16                      # FieldReloc
+; CHECK-NEXT:    .long   [[SEC_INDEX]]           # Field reloc section string offset=[[SEC_INDEX]]
 ; CHECK-NEXT:    .long   1
 ; CHECK-NEXT:    .long   [[RELOC]]
 ; CHECK-NEXT:    .long   [[TYPE_ID]]
 ; CHECK-NEXT:    .long   [[ACCESS_STR]]
+; CHECK-NEXT:    .long   0
 
 declare dso_local i32 @get_value(i8*) local_unnamed_addr #1
 

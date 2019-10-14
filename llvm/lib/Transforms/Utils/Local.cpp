@@ -1132,10 +1132,10 @@ bool llvm::EliminateDuplicatePHINodes(BasicBlock *BB) {
 /// often possible though. If alignment is important, a more reliable approach
 /// is to simply align all global variables and allocation instructions to
 /// their preferred alignment from the beginning.
-static unsigned enforceKnownAlignment(Value *V, unsigned Align,
+static unsigned enforceKnownAlignment(Value *V, unsigned Alignment,
                                       unsigned PrefAlign,
                                       const DataLayout &DL) {
-  assert(PrefAlign > Align);
+  assert(PrefAlign > Alignment);
 
   V = V->stripPointerCasts();
 
@@ -1146,36 +1146,36 @@ static unsigned enforceKnownAlignment(Value *V, unsigned Align,
     // stripPointerCasts recurses through infinite layers of bitcasts,
     // while computeKnownBits is not allowed to traverse more than 6
     // levels.
-    Align = std::max(AI->getAlignment(), Align);
-    if (PrefAlign <= Align)
-      return Align;
+    Alignment = std::max(AI->getAlignment(), Alignment);
+    if (PrefAlign <= Alignment)
+      return Alignment;
 
     // If the preferred alignment is greater than the natural stack alignment
     // then don't round up. This avoids dynamic stack realignment.
-    if (DL.exceedsNaturalStackAlignment(PrefAlign))
-      return Align;
-    AI->setAlignment(PrefAlign);
+    if (DL.exceedsNaturalStackAlignment(Align(PrefAlign)))
+      return Alignment;
+    AI->setAlignment(MaybeAlign(PrefAlign));
     return PrefAlign;
   }
 
   if (auto *GO = dyn_cast<GlobalObject>(V)) {
     // TODO: as above, this shouldn't be necessary.
-    Align = std::max(GO->getAlignment(), Align);
-    if (PrefAlign <= Align)
-      return Align;
+    Alignment = std::max(GO->getAlignment(), Alignment);
+    if (PrefAlign <= Alignment)
+      return Alignment;
 
     // If there is a large requested alignment and we can, bump up the alignment
     // of the global.  If the memory we set aside for the global may not be the
     // memory used by the final program then it is impossible for us to reliably
     // enforce the preferred alignment.
     if (!GO->canIncreaseAlignment())
-      return Align;
+      return Alignment;
 
     GO->setAlignment(PrefAlign);
     return PrefAlign;
   }
 
-  return Align;
+  return Alignment;
 }
 
 unsigned llvm::getOrEnforceKnownAlignment(Value *V, unsigned PrefAlign,
@@ -1378,7 +1378,12 @@ void llvm::ConvertDebugDeclareToDebugValue(DbgVariableIntrinsic *DII,
 /// Determine whether this alloca is either a VLA or an array.
 static bool isArray(AllocaInst *AI) {
   return AI->isArrayAllocation() ||
-    AI->getType()->getElementType()->isArrayTy();
+         (AI->getAllocatedType() && AI->getAllocatedType()->isArrayTy());
+}
+
+/// Determine whether this alloca is a structure.
+static bool isStructure(AllocaInst *AI) {
+  return AI->getAllocatedType() && AI->getAllocatedType()->isStructTy();
 }
 
 /// LowerDbgDeclare - Lowers llvm.dbg.declare intrinsics into appropriate set
@@ -1403,7 +1408,7 @@ bool llvm::LowerDbgDeclare(Function &F) {
     // stored on the stack, while the dbg.declare can only describe
     // the stack slot (and at a lexical-scope granularity). Later
     // passes will attempt to elide the stack slot.
-    if (!AI || isArray(AI))
+    if (!AI || isArray(AI) || isStructure(AI))
       continue;
 
     // A volatile load/store means that the alloca can't be elided anyway.
@@ -1933,18 +1938,24 @@ unsigned llvm::changeToUnreachable(Instruction *I, bool UseLLVMTrap,
   return NumInstrsRemoved;
 }
 
-/// changeToCall - Convert the specified invoke into a normal call.
-void llvm::changeToCall(InvokeInst *II, DomTreeUpdater *DTU) {
-  SmallVector<Value*, 8> Args(II->arg_begin(), II->arg_end());
+CallInst *llvm::createCallMatchingInvoke(InvokeInst *II) {
+  SmallVector<Value *, 8> Args(II->arg_begin(), II->arg_end());
   SmallVector<OperandBundleDef, 1> OpBundles;
   II->getOperandBundlesAsDefs(OpBundles);
-  CallInst *NewCall = CallInst::Create(
-      II->getFunctionType(), II->getCalledValue(), Args, OpBundles, "", II);
-  NewCall->takeName(II);
+  CallInst *NewCall = CallInst::Create(II->getFunctionType(),
+                                       II->getCalledValue(), Args, OpBundles);
   NewCall->setCallingConv(II->getCallingConv());
   NewCall->setAttributes(II->getAttributes());
   NewCall->setDebugLoc(II->getDebugLoc());
   NewCall->copyMetadata(*II);
+  return NewCall;
+}
+
+/// changeToCall - Convert the specified invoke into a normal call.
+void llvm::changeToCall(InvokeInst *II, DomTreeUpdater *DTU) {
+  CallInst *NewCall = createCallMatchingInvoke(II);
+  NewCall->takeName(II);
+  NewCall->insertBefore(II);
   II->replaceAllUsesWith(NewCall);
 
   // Follow the call by a branch to the normal destination.
@@ -2199,12 +2210,10 @@ void llvm::removeUnwindEdge(BasicBlock *BB, DomTreeUpdater *DTU) {
 
 /// removeUnreachableBlocks - Remove blocks that are not reachable, even
 /// if they are in a dead cycle.  Return true if a change was made, false
-/// otherwise. If `LVI` is passed, this function preserves LazyValueInfo
-/// after modifying the CFG.
-bool llvm::removeUnreachableBlocks(Function &F, LazyValueInfo *LVI,
-                                   DomTreeUpdater *DTU,
+/// otherwise.
+bool llvm::removeUnreachableBlocks(Function &F, DomTreeUpdater *DTU,
                                    MemorySSAUpdater *MSSAU) {
-  SmallPtrSet<BasicBlock*, 16> Reachable;
+  SmallPtrSet<BasicBlock *, 16> Reachable;
   bool Changed = markAliveBlocks(F, Reachable, DTU);
 
   // If there are unreachable blocks in the CFG...
@@ -2212,21 +2221,21 @@ bool llvm::removeUnreachableBlocks(Function &F, LazyValueInfo *LVI,
     return Changed;
 
   assert(Reachable.size() < F.size());
-  NumRemoved += F.size()-Reachable.size();
+  NumRemoved += F.size() - Reachable.size();
 
   SmallSetVector<BasicBlock *, 8> DeadBlockSet;
-  for (Function::iterator I = ++F.begin(), E = F.end(); I != E; ++I) {
-    auto *BB = &*I;
-    if (Reachable.count(BB))
+  for (BasicBlock &BB : F) {
+    // Skip reachable basic blocks
+    if (Reachable.find(&BB) != Reachable.end())
       continue;
-    DeadBlockSet.insert(BB);
+    DeadBlockSet.insert(&BB);
   }
 
   if (MSSAU)
     MSSAU->removeBlocks(DeadBlockSet);
 
   // Loop over all of the basic blocks that are not reachable, dropping all of
-  // their internal references. Update DTU and LVI if available.
+  // their internal references. Update DTU if available.
   std::vector<DominatorTree::UpdateType> Updates;
   for (auto *BB : DeadBlockSet) {
     for (BasicBlock *Successor : successors(BB)) {
@@ -2235,26 +2244,18 @@ bool llvm::removeUnreachableBlocks(Function &F, LazyValueInfo *LVI,
       if (DTU)
         Updates.push_back({DominatorTree::Delete, BB, Successor});
     }
-    if (LVI)
-      LVI->eraseBlock(BB);
     BB->dropAllReferences();
-  }
-  for (Function::iterator I = ++F.begin(); I != F.end();) {
-    auto *BB = &*I;
-    if (Reachable.count(BB)) {
-      ++I;
-      continue;
-    }
     if (DTU) {
-      // Remove the terminator of BB to clear the successor list of BB.
-      if (BB->getTerminator())
-        BB->getInstList().pop_back();
+      Instruction *TI = BB->getTerminator();
+      assert(TI && "Basic block should have a terminator");
+      // Terminators like invoke can have users. We have to replace their users,
+      // before removing them.
+      if (!TI->use_empty())
+        TI->replaceAllUsesWith(UndefValue::get(TI->getType()));
+      TI->eraseFromParent();
       new UnreachableInst(BB->getContext(), BB);
       assert(succ_empty(BB) && "The successor list of BB isn't empty before "
                                "applying corresponding DTU updates.");
-      ++I;
-    } else {
-      I = F.getBasicBlockList().erase(I);
     }
   }
 
@@ -2270,7 +2271,11 @@ bool llvm::removeUnreachableBlocks(Function &F, LazyValueInfo *LVI,
     }
     if (!Deleted)
       return false;
+  } else {
+    for (auto *BB : DeadBlockSet)
+      BB->eraseFromParent();
   }
+
   return true;
 }
 
@@ -2339,6 +2344,9 @@ void llvm::combineMetadata(Instruction *K, const Instruction *J,
         K->setMetadata(Kind,
           MDNode::getMostGenericAlignmentOrDereferenceable(JMD, KMD));
         break;
+      case LLVMContext::MD_preserve_access_index:
+        // Preserve !preserve.access.index in K.
+        break;
     }
   }
   // Set !invariant.group from J if J has it. If both instructions have it
@@ -2361,7 +2369,7 @@ void llvm::combineMetadataForCSE(Instruction *K, const Instruction *J,
       LLVMContext::MD_invariant_group, LLVMContext::MD_align,
       LLVMContext::MD_dereferenceable,
       LLVMContext::MD_dereferenceable_or_null,
-      LLVMContext::MD_access_group};
+      LLVMContext::MD_access_group,    LLVMContext::MD_preserve_access_index};
   combineMetadata(K, J, KnownIDs, KDominatesJ);
 }
 
@@ -2444,7 +2452,7 @@ void llvm::patchReplacementInstruction(Instruction *I, Value *Repl) {
       LLVMContext::MD_noalias,         LLVMContext::MD_range,
       LLVMContext::MD_fpmath,          LLVMContext::MD_invariant_load,
       LLVMContext::MD_invariant_group, LLVMContext::MD_nonnull,
-      LLVMContext::MD_access_group};
+      LLVMContext::MD_access_group,    LLVMContext::MD_preserve_access_index};
   combineMetadata(ReplInst, I, KnownIDs, false);
 }
 

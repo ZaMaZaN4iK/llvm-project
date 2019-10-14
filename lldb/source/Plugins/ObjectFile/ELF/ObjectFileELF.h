@@ -122,7 +122,9 @@ public:
 
   lldb_private::UUID GetUUID() override;
 
-  lldb_private::FileSpecList GetDebugSymbolFilePaths() override;
+  /// Return the contents of the .gnu_debuglink section, if the object file
+  /// contains it. 
+  llvm::Optional<lldb_private::FileSpec> GetDebugLink();
 
   uint32_t GetDependentModules(lldb_private::FileSpecList &files) override;
 
@@ -205,6 +207,10 @@ private:
 
   /// Collection of symbols from the dynamic table.
   DynamicSymbolColl m_dynamic_symbols;
+
+  /// Object file parsed from .gnu_debugdata section (\sa
+  /// GetGnuDebugDataObjectFile())
+  std::shared_ptr<ObjectFileELF> m_gnu_debug_data_object_file;
 
   /// List of file specifications corresponding to the modules (shared
   /// libraries) on which this object file depends.
@@ -381,6 +387,14 @@ private:
                               lldb_private::UUID &uuid);
 
   bool AnySegmentHasPhysicalAddress();
+  
+  /// Takes the .gnu_debugdata and returns the decompressed object file that is
+  /// stored within that section.
+  ///
+  /// \returns either the decompressed object file stored within the
+  /// .gnu_debugdata section or \c nullptr if an error occured or if there's no
+  /// section with that name.
+  std::shared_ptr<ObjectFileELF> GetGnuDebugDataObjectFile();
 };
 
 #endif // liblldb_ObjectFileELF_h_

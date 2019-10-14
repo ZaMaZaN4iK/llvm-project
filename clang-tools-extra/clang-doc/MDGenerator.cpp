@@ -252,7 +252,6 @@ public:
 
   llvm::Error generateDocForInfo(Info *I, llvm::raw_ostream &OS,
                                  const ClangDocContext &CDCtx) override;
-  bool createResources(ClangDocContext CDCtx) override { return true; }
 };
 
 const char *MDGenerator::Format = "md";
@@ -273,8 +272,8 @@ llvm::Error MDGenerator::generateDocForInfo(Info *I, llvm::raw_ostream &OS,
     genMarkdown(*static_cast<clang::doc::FunctionInfo *>(I), OS);
     break;
   case InfoType::IT_default:
-    return llvm::make_error<llvm::StringError>("Unexpected info type.\n",
-                                               llvm::inconvertibleErrorCode());
+    return createStringError(llvm::inconvertibleErrorCode(),
+                             "unexpected InfoType");
   }
   return llvm::Error::success();
 }

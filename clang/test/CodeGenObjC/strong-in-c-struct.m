@@ -1,11 +1,10 @@
-// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -emit-llvm -o - -DUSESTRUCT -I %S/Inputs %s | FileCheck %s
+// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -emit-llvm -o - -DUSESTRUCT %s | FileCheck %s
 
-// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -emit-pch -I %S/Inputs -o %t %s
-// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -include-pch %t -emit-llvm -o - -DUSESTRUCT -I %S/Inputs %s | FileCheck %s
+// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -emit-pch -o %t %s
+// RUN: %clang_cc1 -triple arm64-apple-ios11 -fobjc-arc -fblocks  -fobjc-runtime=ios-11.0 -include-pch %t -emit-llvm -o - -DUSESTRUCT %s | FileCheck %s
 
 #ifndef HEADER
 #define HEADER
-#include "strong_in_union.h"
 
 typedef void (^BlockTy)(void);
 
@@ -248,7 +247,7 @@ void test_copy_assignment_StrongOuter(StrongOuter *d, StrongOuter *s) {
 // CHECK: %[[V9:.*]] = bitcast %[[STRUCT_STRONGOUTER]]* %[[T2]] to i8**
 // CHECK: call void @__destructor_8_S_s16_s24(i8** %[[V9]])
 
-// CHECK: define internal void @__Block_byref_object_copy_(i8*, i8*)
+// CHECK: define internal void @__Block_byref_object_copy_(i8* %0, i8* %1)
 // CHECK: call void @__move_constructor_8_8_S_t0w16_s16_s24_t32w8(
 
 // CHECK: define linkonce_odr hidden void @__move_constructor_8_8_S_t0w16_s16_s24_t32w8(i8** %[[DST:.*]], i8** %[[SRC:.*]])
@@ -269,7 +268,7 @@ void test_copy_assignment_StrongOuter(StrongOuter *d, StrongOuter *s) {
 // CHECK: store i8* null, i8** %[[V7]], align 8
 // CHECK: store i8* %[[V8]], i8** %[[V4]], align 8
 
-// CHECK: define internal void @__Block_byref_object_dispose_(i8*)
+// CHECK: define internal void @__Block_byref_object_dispose_(i8* %0)
 // CHECK: call void @__destructor_8_S_s16_s24(
 
 void test_move_constructor_StrongOuter(void) {
@@ -546,7 +545,7 @@ void test_copy_constructor_StrongVolatile1(Strong *s) {
 // CHECK: call void @__destructor_8_s16(
 // CHECK: ret void
 
-// CHECK: define linkonce_odr hidden void @__copy_helper_block_8_32n13_8_8_t0w16_s16(i8*, i8*)
+// CHECK: define linkonce_odr hidden void @__copy_helper_block_8_32n13_8_8_t0w16_s16(i8* %0, i8* %1)
 // CHECK: call void @__copy_constructor_8_8_t0w16_s16(
 // CHECK: ret void
 
@@ -693,14 +692,6 @@ void test_copy_constructor_Bitfield0(Bitfield0 *a) {
 
 void test_copy_constructor_Bitfield1(Bitfield1 *a) {
   Bitfield1 t = *a;
-}
-
-// CHECK: define void @test_strong_in_union()
-// CHECK: alloca %{{.*}}
-// CHECK-NEXT: ret void
-
-void test_strong_in_union() {
-  U t;
 }
 
 // CHECK: define void @test_copy_constructor_VolatileArray(

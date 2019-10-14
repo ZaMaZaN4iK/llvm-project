@@ -11,9 +11,37 @@
 
 #include <vector>
 
+#ifdef _MSC_VER
+// Disable warnings about potential divide by 0.
+#pragma warning(push)
+#pragma warning(disable : 4723)
+#endif
+
 using namespace llvm;
 
 namespace {
+
+TEST(AlignmentTest, AlignOfConstant) {
+  EXPECT_EQ(Align::Of<uint8_t>(), Align(alignof(uint8_t)));
+  EXPECT_EQ(Align::Of<uint16_t>(), Align(alignof(uint16_t)));
+  EXPECT_EQ(Align::Of<uint32_t>(), Align(alignof(uint32_t)));
+  EXPECT_EQ(Align::Of<uint64_t>(), Align(alignof(uint64_t)));
+}
+
+TEST(AlignmentTest, AlignConstant) {
+  EXPECT_EQ(Align::Constant<1>(), Align(1));
+  EXPECT_EQ(Align::Constant<2>(), Align(2));
+  EXPECT_EQ(Align::Constant<4>(), Align(4));
+  EXPECT_EQ(Align::Constant<8>(), Align(8));
+  EXPECT_EQ(Align::Constant<16>(), Align(16));
+  EXPECT_EQ(Align::Constant<32>(), Align(32));
+  EXPECT_EQ(Align::Constant<64>(), Align(64));
+}
+
+TEST(AlignmentTest, AlignConstexprConstant) {
+  constexpr Align kConstantAlign = Align::Of<uint64_t>();
+  EXPECT_EQ(Align(8), kConstantAlign);
+}
 
 std::vector<uint64_t> getValidAlignments() {
   std::vector<uint64_t> Out;
@@ -22,7 +50,10 @@ std::vector<uint64_t> getValidAlignments() {
   return Out;
 }
 
-TEST(AlignmentTest, AlignDefaultCTor) { EXPECT_EQ(Align().value(), 1ULL); }
+TEST(AlignmentTest, AlignDefaultCTor) {
+  EXPECT_EQ(Align().value(), 1ULL);
+  EXPECT_EQ(Align::None().value(), 1ULL);
+}
 
 TEST(AlignmentTest, MaybeAlignDefaultCTor) {
   EXPECT_FALSE(MaybeAlign().hasValue());
@@ -83,8 +114,9 @@ TEST(AlignmentTest, AlignTo) {
     // Test MaybeAlign
     EXPECT_EQ(alignTo(T.offset, A), T.rounded);
     // Test Align
-    if (A)
+    if (A) {
       EXPECT_EQ(alignTo(T.offset, A.getValue()), T.rounded);
+    }
   }
 }
 
@@ -112,12 +144,15 @@ TEST(AlignmentTest, MinAlign) {
   for (const auto &T : kTests) {
     EXPECT_EQ(commonAlignment(MaybeAlign(T.A), MaybeAlign(T.B)), T.MinAlign);
     EXPECT_EQ(MinAlign(T.A, T.B), T.MinAlign);
-    if (T.A)
+    if (T.A) {
       EXPECT_EQ(commonAlignment(Align(T.A), MaybeAlign(T.B)), T.MinAlign);
-    if (T.B)
+    }
+    if (T.B) {
       EXPECT_EQ(commonAlignment(MaybeAlign(T.A), Align(T.B)), T.MinAlign);
-    if (T.A && T.B)
+    }
+    if (T.A && T.B) {
       EXPECT_EQ(commonAlignment(Align(T.A), Align(T.B)), T.MinAlign);
+    }
   }
 }
 
@@ -155,8 +190,9 @@ TEST(AlignmentTest, isAligned) {
     // Test MaybeAlign
     EXPECT_EQ(isAligned(A, T.offset), T.isAligned);
     // Test Align
-    if (A)
+    if (A) {
       EXPECT_EQ(isAligned(A.getValue(), T.offset), T.isAligned);
+    }
   }
 }
 
@@ -213,6 +249,29 @@ TEST(AlignmentTest, AlignComparisons) {
   }
 }
 
+TEST(AlignmentTest, Max) {
+  // We introduce std::max here to test ADL.
+  using std::max;
+
+  // Uses llvm::max.
+  EXPECT_EQ(max(MaybeAlign(), Align(2)), Align(2));
+  EXPECT_EQ(max(Align(2), MaybeAlign()), Align(2));
+
+  EXPECT_EQ(max(MaybeAlign(1), Align(2)), Align(2));
+  EXPECT_EQ(max(Align(2), MaybeAlign(1)), Align(2));
+
+  EXPECT_EQ(max(MaybeAlign(2), Align(2)), Align(2));
+  EXPECT_EQ(max(Align(2), MaybeAlign(2)), Align(2));
+
+  EXPECT_EQ(max(MaybeAlign(4), Align(2)), Align(4));
+  EXPECT_EQ(max(Align(2), MaybeAlign(4)), Align(4));
+
+  // Uses std::max.
+  EXPECT_EQ(max(Align(2), Align(4)), Align(4));
+  EXPECT_EQ(max(MaybeAlign(2), MaybeAlign(4)), MaybeAlign(4));
+  EXPECT_EQ(max(MaybeAlign(), MaybeAlign()), MaybeAlign());
+}
+
 TEST(AlignmentTest, AssumeAligned) {
   EXPECT_EQ(assumeAligned(0), Align(1));
   EXPECT_EQ(assumeAligned(0), Align());
@@ -251,7 +310,8 @@ TEST(AlignmentDeathTest, InvalidCTors) {
   EXPECT_DEATH((Align(0)), "Value must not be 0");
   for (uint64_t Value : getNonPowerOfTwo()) {
     EXPECT_DEATH((Align(Value)), "Alignment is not a power of 2");
-    EXPECT_DEATH((MaybeAlign(Value)), "Alignment is not 0 or a power of 2");
+    EXPECT_DEATH((MaybeAlign(Value)),
+                 "Alignment is neither 0 nor a power of 2");
   }
 }
 
@@ -292,3 +352,7 @@ TEST(AlignmentDeathTest, CompareAlignToUndefMaybeAlign) {
 #endif // NDEBUG
 
 } // end anonymous namespace
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

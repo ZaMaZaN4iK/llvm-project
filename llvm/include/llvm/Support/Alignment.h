@@ -53,14 +53,25 @@ private:
   friend unsigned encode(struct MaybeAlign A);
   friend struct MaybeAlign decodeMaybeAlign(unsigned Value);
 
+  /// A trivial type to allow construction of constexpr Align.
+  /// This is currently needed to workaround a bug in GCC 5.3 which prevents
+  /// definition of constexpr assign operators.
+  /// https://stackoverflow.com/questions/46756288/explicitly-defaulted-function-cannot-be-declared-as-constexpr-because-the-implic
+  /// FIXME: Remove this, make all assign operators constexpr and introduce user
+  /// defined literals when we don't have to support GCC 5.3 anymore.
+  /// https://llvm.org/docs/GettingStarted.html#getting-a-modern-host-c-toolchain
+  struct LogValue {
+    uint8_t Log;
+  };
+
 public:
   /// Default is byte-aligned.
-  Align() = default;
+  constexpr Align() = default;
   /// Do not perform checks in case of copy/move construct/assign, because the
   /// checks have been performed when building `Other`.
-  Align(const Align &Other) = default;
+  constexpr Align(const Align &Other) = default;
+  constexpr Align(Align &&Other) = default;
   Align &operator=(const Align &Other) = default;
-  Align(Align &&Other) = default;
   Align &operator=(Align &&Other) = default;
 
   explicit Align(uint64_t Value) {
@@ -73,6 +84,27 @@ public:
   /// This is a hole in the type system and should not be abused.
   /// Needed to interact with C for instance.
   uint64_t value() const { return uint64_t(1) << ShiftValue; }
+
+  /// Returns a default constructed Align which corresponds to no alignment.
+  /// This is useful to test for unalignment as it conveys clear semantic.
+  /// `if (A != Align::None())`
+  /// would be better than
+  /// `if (A > Align(1))`
+  constexpr static const Align None() { return Align(); }
+
+  /// Allow constructions of constexpr Align.
+  template <size_t kValue> constexpr static LogValue Constant() {
+    return LogValue{static_cast<uint8_t>(CTLog2<kValue>())};
+  }
+
+  /// Allow constructions of constexpr Align from types.
+  /// Compile time equivalent to Align(alignof(T)).
+  template <typename T> constexpr static LogValue Of() {
+    return Constant<std::alignment_of<T>::value>();
+  }
+
+  /// Constexpr constructor from LogValue type.
+  constexpr Align(LogValue CA) : ShiftValue(CA.Log) {}
 };
 
 /// Treats the value 0 as a 1, so Align is always at least 1.
@@ -101,7 +133,7 @@ public:
 
   explicit MaybeAlign(uint64_t Value) {
     assert((Value == 0 || llvm::isPowerOf2_64(Value)) &&
-           "Alignment is not 0 or a power of 2");
+           "Alignment is neither 0 nor a power of 2");
     if (Value)
       emplace(Value);
   }
@@ -131,6 +163,12 @@ inline uint64_t alignTo(uint64_t Size, Align A) {
 /// Returns `Size` if current alignment is undefined.
 inline uint64_t alignTo(uint64_t Size, MaybeAlign A) {
   return A ? alignTo(Size, A.getValue()) : Size;
+}
+
+/// Returns the offset to the next integer (mod 2**64) that is greater than
+/// or equal to \p Value and is a multiple of \p Align.
+inline uint64_t offsetToAlignment(uint64_t Value, Align Alignment) {
+  return alignTo(Value, Alignment) - Value;
 }
 
 /// Returns the log2 of the alignment.
@@ -318,6 +356,14 @@ inline MaybeAlign operator/(MaybeAlign Lhs, uint64_t Divisor) {
   assert(llvm::isPowerOf2_64(Divisor) &&
          "Divisor must be positive and a power of 2");
   return Lhs ? Lhs.getValue() / Divisor : MaybeAlign();
+}
+
+inline Align max(MaybeAlign Lhs, Align Rhs) {
+  return Lhs && *Lhs > Rhs ? *Lhs : Rhs;
+}
+
+inline Align max(Align Lhs, MaybeAlign Rhs) {
+  return Rhs && *Rhs > Lhs ? *Rhs : Lhs;
 }
 
 #undef ALIGN_CHECK_ISPOSITIVE

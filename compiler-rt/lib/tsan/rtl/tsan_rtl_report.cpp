@@ -27,7 +27,7 @@
 
 namespace __tsan {
 
-using namespace __sanitizer;  // NOLINT
+using namespace __sanitizer;
 
 static ReportStack *SymbolizeStack(StackTrace trace);
 
@@ -154,6 +154,7 @@ ScopedReportBase::ScopedReportBase(ReportType typ, uptr tag) {
 ScopedReportBase::~ScopedReportBase() {
   ctx->report_mtx.Unlock();
   DestroyAndFree(rep_);
+  rep_ = nullptr;
 }
 
 void ScopedReportBase::AddStack(StackTrace stack, bool suppressable) {
@@ -650,7 +651,7 @@ void ReportRace(ThreadState *thr) {
     // and the resulting PC has kExternalPCBit set, so we pass it to
     // __tsan_symbolize_external_ex. __tsan_symbolize_external_ex is within its
     // rights to crash since the PC is completely bogus.
-    // test/tsan/double_race.cc contains a test case for this.
+    // test/tsan/double_race.cpp contains a test case for this.
     toppc = 0;
   }
   ObtainCurrentStack(thr, toppc, &traces[0], &tags[0]);
@@ -700,7 +701,7 @@ void ReportRace(ThreadState *thr) {
   rep.AddLocation(addr_min, addr_max - addr_min);
 
 #if !SANITIZER_GO
-  {  // NOLINT
+  {
     Shadow s(thr->racy_state[1]);
     if (s.epoch() <= thr->last_sleep_clock.get(s.tid()))
       rep.AddSleep(thr->last_sleep_stack_id);

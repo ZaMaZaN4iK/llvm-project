@@ -29,6 +29,9 @@ if is_msvc:
   base_lib = os.path.join(config.compiler_rt_libdir, "clang_rt.builtins%s.lib "
                           % config.target_suffix)
   config.substitutions.append( ("%librt ", base_lib) )
+elif config.host_os  == 'Darwin':
+  base_lib = os.path.join(config.compiler_rt_libdir, "libclang_rt.osx.a ")
+  config.substitutions.append( ("%librt ", base_lib + ' -lSystem ') )
 else:
   base_lib = os.path.join(config.compiler_rt_libdir, "libclang_rt.builtins%s.a"
                           % config.target_suffix)
@@ -87,7 +90,7 @@ config.substitutions.append( ("%arm_call_apsr ", \
                               build_invocation(call_apsr_flags)) )
 
 # Default test suffixes.
-config.suffixes = ['.c', '.cc', '.cpp']
+config.suffixes = ['.c', '.cpp']
 
 if not config.emulator:
   config.available_features.add('native-run')

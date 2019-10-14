@@ -496,7 +496,6 @@ struct DevirtModule {
   void buildTypeIdentifierMap(
       std::vector<VTableBits> &Bits,
       DenseMap<Metadata *, std::set<TypeMemberInfo>> &TypeIdMap);
-  Constant *getPointerAtOffset(Constant *I, uint64_t Offset);
   bool
   tryFindVirtualCallTargets(std::vector<VirtualCallTarget> &TargetsForSlot,
                             const std::set<TypeMemberInfo> &TypeMemberInfos,
@@ -644,7 +643,7 @@ struct WholeProgramDevirt : public ModulePass {
     // an optimization remark emitter on the fly, when we need it.
     std::unique_ptr<OptimizationRemarkEmitter> ORE;
     auto OREGetter = [&](Function *F) -> OptimizationRemarkEmitter & {
-      ORE = make_unique<OptimizationRemarkEmitter>(F);
+      ORE = std::make_unique<OptimizationRemarkEmitter>(F);
       return *ORE;
     };
 
@@ -713,7 +712,7 @@ void runWholeProgramDevirtOnIndex(
 
 void updateIndexWPDForExports(
     ModuleSummaryIndex &Summary,
-    StringMap<FunctionImporter::ExportSetTy> &ExportLists,
+    function_ref<bool(StringRef, GlobalValue::GUID)> isExported,
     std::map<ValueInfo, std::vector<VTableSlotSummary>> &LocalWPDTargetsMap) {
   for (auto &T : LocalWPDTargetsMap) {
     auto &VI = T.first;
@@ -721,9 +720,7 @@ void updateIndexWPDForExports(
     assert(VI.getSummaryList().size() == 1 &&
            "Devirt of local target has more than one copy");
     auto &S = VI.getSummaryList()[0];
-    const auto &ExportList = ExportLists.find(S->modulePath());
-    if (ExportList == ExportLists.end() ||
-        !ExportList->second.count(VI.getGUID()))
+    if (!isExported(S->modulePath(), VI.getGUID()))
       continue;
 
     // It's been exported by a cross module import.
@@ -771,7 +768,7 @@ bool DevirtModule::runForTesting(
     ExitOnError ExitOnErr(
         "-wholeprogramdevirt-write-summary: " + ClWriteSummary + ": ");
     std::error_code EC;
-    raw_fd_ostream OS(ClWriteSummary, EC, sys::fs::F_Text);
+    raw_fd_ostream OS(ClWriteSummary, EC, sys::fs::OF_Text);
     ExitOnErr(errorCodeToError(EC));
 
     yaml::Output Out(OS);
@@ -815,38 +812,6 @@ void DevirtModule::buildTypeIdentifierMap(
   }
 }
 
-Constant *DevirtModule::getPointerAtOffset(Constant *I, uint64_t Offset) {
-  if (I->getType()->isPointerTy()) {
-    if (Offset == 0)
-      return I;
-    return nullptr;
-  }
-
-  const DataLayout &DL = M.getDataLayout();
-
-  if (auto *C = dyn_cast<ConstantStruct>(I)) {
-    const StructLayout *SL = DL.getStructLayout(C->getType());
-    if (Offset >= SL->getSizeInBytes())
-      return nullptr;
-
-    unsigned Op = SL->getElementContainingOffset(Offset);
-    return getPointerAtOffset(cast<Constant>(I->getOperand(Op)),
-                              Offset - SL->getElementOffset(Op));
-  }
-  if (auto *C = dyn_cast<ConstantArray>(I)) {
-    ArrayType *VTableTy = C->getType();
-    uint64_t ElemSize = DL.getTypeAllocSize(VTableTy->getElementType());
-
-    unsigned Op = Offset / ElemSize;
-    if (Op >= C->getNumOperands())
-      return nullptr;
-
-    return getPointerAtOffset(cast<Constant>(I->getOperand(Op)),
-                              Offset % ElemSize);
-  }
-  return nullptr;
-}
-
 bool DevirtModule::tryFindVirtualCallTargets(
     std::vector<VirtualCallTarget> &TargetsForSlot,
     const std::set<TypeMemberInfo> &TypeMemberInfos, uint64_t ByteOffset) {
@@ -855,7 +820,7 @@ bool DevirtModule::tryFindVirtualCallTargets(
       return false;
 
     Constant *Ptr = getPointerAtOffset(TM.Bits->GV->getInitializer(),
-                                       TM.Offset + ByteOffset);
+                                       TM.Offset + ByteOffset, M);
     if (!Ptr)
       return false;
 
@@ -1942,6 +1907,12 @@ bool DevirtModule::run() {
   if (DidVirtualConstProp)
     for (VTableBits &B : Bits)
       rebuildGlobal(B);
+
+  // We have lowered or deleted the type checked load intrinsics, so we no
+  // longer have enough information to reason about the liveness of virtual
+  // function pointers in GlobalDCE.
+  for (GlobalVariable &GV : M.globals())
+    GV.eraseMetadata(LLVMContext::MD_vcall_visibility);
 
   return true;
 }

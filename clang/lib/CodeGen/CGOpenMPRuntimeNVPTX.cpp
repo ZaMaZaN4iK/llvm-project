@@ -107,6 +107,10 @@ enum OpenMPRTLFunctionNVPTX {
   /// Call to void __kmpc_barrier_simple_spmd(ident_t *loc, kmp_int32
   /// global_tid);
   OMPRTL__kmpc_barrier_simple_spmd,
+  /// Call to int32_t __kmpc_warp_active_thread_mask(void);
+  OMPRTL_NVPTX__kmpc_warp_active_thread_mask,
+  /// Call to void __kmpc_syncwarp(int32_t Mask);
+  OMPRTL_NVPTX__kmpc_syncwarp,
 };
 
 /// Pre(post)-action for different OpenMP constructs specialized for NVPTX.
@@ -276,7 +280,8 @@ static RecordDecl *buildRecordForGlobalizedVars(
       }
     } else {
       llvm::APInt ArraySize(32, BufSize);
-      Type = C.getConstantArrayType(Type, ArraySize, ArrayType::Normal, 0);
+      Type = C.getConstantArrayType(Type, ArraySize, nullptr, ArrayType::Normal,
+                                    0);
       Field = FieldDecl::Create(
           C, GlobalizedRD, Loc, Loc, VD->getIdentifier(), Type,
           C.getTrivialTypeSourceInfo(Type, SourceLocation()),
@@ -287,10 +292,11 @@ static RecordDecl *buildRecordForGlobalizedVars(
                                      static_cast<CharUnits::QuantityType>(
                                          GlobalMemoryAlignment)));
       Field->addAttr(AlignedAttr::CreateImplicit(
-          C, AlignedAttr::GNU_aligned, /*IsAlignmentExpr=*/true,
+          C, /*IsAlignmentExpr=*/true,
           IntegerLiteral::Create(C, Align,
                                  C.getIntTypeForBitwidth(32, /*Signed=*/0),
-                                 SourceLocation())));
+                                 SourceLocation()),
+          {}, AttributeCommonInfo::AS_GNU, AlignedAttr::GNU_aligned));
     }
     GlobalizedRD->addDecl(Field);
     MappedDeclsFields.try_emplace(VD, Field);
@@ -790,12 +796,14 @@ static bool hasNestedSPMDDirective(ASTContext &Ctx,
     case OMPD_teams_distribute_parallel_for_simd:
     case OMPD_target_update:
     case OMPD_declare_simd:
+    case OMPD_declare_variant:
     case OMPD_declare_target:
     case OMPD_end_declare_target:
     case OMPD_declare_reduction:
     case OMPD_declare_mapper:
     case OMPD_taskloop:
     case OMPD_taskloop_simd:
+    case OMPD_master_taskloop:
     case OMPD_requires:
     case OMPD_unknown:
       llvm_unreachable("Unexpected directive.");
@@ -860,12 +868,14 @@ static bool supportsSPMDExecutionMode(ASTContext &Ctx,
   case OMPD_teams_distribute_parallel_for_simd:
   case OMPD_target_update:
   case OMPD_declare_simd:
+  case OMPD_declare_variant:
   case OMPD_declare_target:
   case OMPD_end_declare_target:
   case OMPD_declare_reduction:
   case OMPD_declare_mapper:
   case OMPD_taskloop:
   case OMPD_taskloop_simd:
+  case OMPD_master_taskloop:
   case OMPD_requires:
   case OMPD_unknown:
     break;
@@ -1023,12 +1033,14 @@ static bool hasNestedLightweightDirective(ASTContext &Ctx,
     case OMPD_teams_distribute_parallel_for_simd:
     case OMPD_target_update:
     case OMPD_declare_simd:
+    case OMPD_declare_variant:
     case OMPD_declare_target:
     case OMPD_end_declare_target:
     case OMPD_declare_reduction:
     case OMPD_declare_mapper:
     case OMPD_taskloop:
     case OMPD_taskloop_simd:
+    case OMPD_master_taskloop:
     case OMPD_requires:
     case OMPD_unknown:
       llvm_unreachable("Unexpected directive.");
@@ -1099,12 +1111,14 @@ static bool supportsLightweightRuntime(ASTContext &Ctx,
   case OMPD_teams_distribute_parallel_for_simd:
   case OMPD_target_update:
   case OMPD_declare_simd:
+  case OMPD_declare_variant:
   case OMPD_declare_target:
   case OMPD_end_declare_target:
   case OMPD_declare_reduction:
   case OMPD_declare_mapper:
   case OMPD_taskloop:
   case OMPD_taskloop_simd:
+  case OMPD_master_taskloop:
   case OMPD_requires:
   case OMPD_unknown:
     break;
@@ -1794,6 +1808,20 @@ CGOpenMPRuntimeNVPTX::createNVPTXRuntimeFunction(unsigned Function) {
         ->addFnAttr(llvm::Attribute::Convergent);
     break;
   }
+  case OMPRTL_NVPTX__kmpc_warp_active_thread_mask: {
+    // Build int32_t __kmpc_warp_active_thread_mask(void);
+    auto *FnTy =
+        llvm::FunctionType::get(CGM.Int32Ty, llvm::None, /*isVarArg=*/false);
+    RTLFn = CGM.CreateRuntimeFunction(FnTy, "__kmpc_warp_active_thread_mask");
+    break;
+  }
+  case OMPRTL_NVPTX__kmpc_syncwarp: {
+    // Build void __kmpc_syncwarp(kmp_int32 Mask);
+    auto *FnTy =
+        llvm::FunctionType::get(CGM.VoidTy, CGM.Int32Ty, /*isVarArg=*/false);
+    RTLFn = CGM.CreateRuntimeFunction(FnTy, "__kmpc_syncwarp");
+    break;
+  }
   }
   return RTLFn;
 }
@@ -1869,6 +1897,19 @@ unsigned CGOpenMPRuntimeNVPTX::getDefaultLocationReserved2Flags() const {
     return UndefinedMode;
   }
   llvm_unreachable("Unknown flags are requested.");
+}
+
+bool CGOpenMPRuntimeNVPTX::tryEmitDeclareVariant(const GlobalDecl &NewGD,
+                                                 const GlobalDecl &OldGD,
+                                                 llvm::GlobalValue *OrigAddr,
+                                                 bool IsForDefinition) {
+  // Emit the function in OldGD with the body from NewGD, if NewGD is defined.
+  auto *NewFD = cast<FunctionDecl>(NewGD.getDecl());
+  if (NewFD->isDefined()) {
+    CGM.emitOpenMPDeviceFunctionRedefinition(OldGD, NewGD, OrigAddr);
+    return true;
+  }
+  return false;
 }
 
 CGOpenMPRuntimeNVPTX::CGOpenMPRuntimeNVPTX(CodeGenModule &CGM)
@@ -2030,7 +2071,7 @@ llvm::Function *CGOpenMPRuntimeNVPTX::emitTeamsOutlinedFunction(
         auto I = Rt.FunctionGlobalizedDecls.try_emplace(CGF.CurFn).first;
         I->getSecond().GlobalRecord = GlobalizedRD;
         I->getSecond().MappedParams =
-            llvm::make_unique<CodeGenFunction::OMPMapVars>();
+            std::make_unique<CodeGenFunction::OMPMapVars>();
         DeclToAddrMapTy &Data = I->getSecond().LocalVarData;
         for (const auto &Pair : MappedDeclsFields) {
           assert(Pair.getFirst()->isCanonicalDecl() &&
@@ -2700,6 +2741,9 @@ void CGOpenMPRuntimeNVPTX::emitCriticalRegion(
   llvm::BasicBlock *BodyBB = CGF.createBasicBlock("omp.critical.body");
   llvm::BasicBlock *ExitBB = CGF.createBasicBlock("omp.critical.exit");
 
+  // Get the mask of active threads in the warp.
+  llvm::Value *Mask = CGF.EmitRuntimeCall(
+      createNVPTXRuntimeFunction(OMPRTL_NVPTX__kmpc_warp_active_thread_mask));
   // Fetch team-local id of the thread.
   llvm::Value *ThreadID = getNVPTXThreadID(CGF);
 
@@ -2740,8 +2784,9 @@ void CGOpenMPRuntimeNVPTX::emitCriticalRegion(
   // Block waits for all threads in current team to finish then increments the
   // counter variable and returns to the loop.
   CGF.EmitBlock(SyncBB);
-  emitBarrierCall(CGF, Loc, OMPD_unknown, /*EmitChecks=*/false,
-                  /*ForceSimpleCall=*/true);
+  // Reconverge active threads in the warp.
+  (void)CGF.EmitRuntimeCall(
+      createNVPTXRuntimeFunction(OMPRTL_NVPTX__kmpc_syncwarp), Mask);
 
   llvm::Value *IncCounterVal =
       CGF.Builder.CreateNSWAdd(CounterVal, CGF.Builder.getInt32(1));
@@ -4242,7 +4287,7 @@ void CGOpenMPRuntimeNVPTX::emitReduction(
   }
   llvm::APInt ArraySize(/*unsigned int numBits=*/32, Size);
   QualType ReductionArrayTy =
-      C.getConstantArrayType(C.VoidPtrTy, ArraySize, ArrayType::Normal,
+      C.getConstantArrayType(C.VoidPtrTy, ArraySize, nullptr, ArrayType::Normal,
                              /*IndexTypeQuals=*/0);
   Address ReductionList =
       CGF.CreateMemTemp(ReductionArrayTy, ".omp.reduction.red_list");
@@ -4637,7 +4682,7 @@ void CGOpenMPRuntimeNVPTX::emitFunctionProlog(CodeGenFunction &CGF,
     return;
   auto I = FunctionGlobalizedDecls.try_emplace(CGF.CurFn).first;
   I->getSecond().MappedParams =
-      llvm::make_unique<CodeGenFunction::OMPMapVars>();
+      std::make_unique<CodeGenFunction::OMPMapVars>();
   I->getSecond().GlobalRecord = GlobalizedVarsRecord;
   I->getSecond().EscapedParameters.insert(
       VarChecker.getEscapedParameters().begin(),
@@ -4703,7 +4748,7 @@ Address CGOpenMPRuntimeNVPTX::getAddressOfLocalVariable(CodeGenFunction &CGF,
           /*InsertBefore=*/nullptr, llvm::GlobalValue::NotThreadLocal,
           CGM.getContext().getTargetAddressSpace(LangAS::cuda_constant));
       CharUnits Align = CGM.getContext().getDeclAlign(VD);
-      GV->setAlignment(Align.getQuantity());
+      GV->setAlignment(Align.getAsAlign());
       return Address(GV, Align);
     }
     case OMPAllocateDeclAttr::OMPPTeamMemAlloc: {
@@ -4715,7 +4760,7 @@ Address CGOpenMPRuntimeNVPTX::getAddressOfLocalVariable(CodeGenFunction &CGF,
           /*InsertBefore=*/nullptr, llvm::GlobalValue::NotThreadLocal,
           CGM.getContext().getTargetAddressSpace(LangAS::cuda_shared));
       CharUnits Align = CGM.getContext().getDeclAlign(VD);
-      GV->setAlignment(Align.getQuantity());
+      GV->setAlignment(Align.getAsAlign());
       return Address(GV, Align);
     }
     case OMPAllocateDeclAttr::OMPLargeCapMemAlloc:
@@ -4726,7 +4771,7 @@ Address CGOpenMPRuntimeNVPTX::getAddressOfLocalVariable(CodeGenFunction &CGF,
           llvm::GlobalValue::InternalLinkage,
           llvm::Constant::getNullValue(VarTy), VD->getName());
       CharUnits Align = CGM.getContext().getDeclAlign(VD);
-      GV->setAlignment(Align.getQuantity());
+      GV->setAlignment(Align.getAsAlign());
       return Address(GV, Align);
     }
     }
@@ -5029,7 +5074,7 @@ void CGOpenMPRuntimeNVPTX::clear() {
       Size = llvm::alignTo(Size, RecAlignment);
       llvm::APInt ArySize(/*numBits=*/64, Size);
       QualType SubTy = C.getConstantArrayType(
-          C.CharTy, ArySize, ArrayType::Normal, /*IndexTypeQuals=*/0);
+          C.CharTy, ArySize, nullptr, ArrayType::Normal, /*IndexTypeQuals=*/0);
       const bool UseSharedMemory = Size <= SharedMemorySize;
       auto *Field =
           FieldDecl::Create(C, UseSharedMemory ? SharedStaticRD : StaticRD,
@@ -5056,7 +5101,7 @@ void CGOpenMPRuntimeNVPTX::clear() {
     if (!SharedStaticRD->field_empty()) {
       llvm::APInt ArySize(/*numBits=*/64, SharedMemorySize);
       QualType SubTy = C.getConstantArrayType(
-          C.CharTy, ArySize, ArrayType::Normal, /*IndexTypeQuals=*/0);
+          C.CharTy, ArySize, nullptr, ArrayType::Normal, /*IndexTypeQuals=*/0);
       auto *Field = FieldDecl::Create(
           C, SharedStaticRD, SourceLocation(), SourceLocation(), nullptr, SubTy,
           C.getTrivialTypeSourceInfo(SubTy, SourceLocation()),
@@ -5089,11 +5134,12 @@ void CGOpenMPRuntimeNVPTX::clear() {
       std::pair<unsigned, unsigned> SMsBlockPerSM = getSMsBlocksPerSM(CGM);
       llvm::APInt Size1(32, SMsBlockPerSM.second);
       QualType Arr1Ty =
-          C.getConstantArrayType(StaticTy, Size1, ArrayType::Normal,
+          C.getConstantArrayType(StaticTy, Size1, nullptr, ArrayType::Normal,
                                  /*IndexTypeQuals=*/0);
       llvm::APInt Size2(32, SMsBlockPerSM.first);
-      QualType Arr2Ty = C.getConstantArrayType(Arr1Ty, Size2, ArrayType::Normal,
-                                               /*IndexTypeQuals=*/0);
+      QualType Arr2Ty =
+          C.getConstantArrayType(Arr1Ty, Size2, nullptr, ArrayType::Normal,
+                                 /*IndexTypeQuals=*/0);
       llvm::Type *LLVMArr2Ty = CGM.getTypes().ConvertTypeForMem(Arr2Ty);
       // FIXME: nvlink does not handle weak linkage correctly (object with the
       // different size are reported as erroneous).

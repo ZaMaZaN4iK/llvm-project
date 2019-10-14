@@ -243,6 +243,10 @@ private:
   bool valueIsSplit(const Value &V,
                     SmallVectorImpl<uint64_t> *Offsets = nullptr);
 
+  /// Common code for translating normal calls or invokes.
+  bool translateCallSite(const ImmutableCallSite &CS,
+                         MachineIRBuilder &MIRBuilder);
+
   /// Translate call instruction.
   /// \pre \p U is a call instruction.
   bool translateCall(const User &U, MachineIRBuilder &MIRBuilder);
@@ -513,6 +517,10 @@ private:
   // True when either the Target Machine specifies no optimizations or the
   // function has the optnone attribute.
   bool EnableOpts = false;
+
+  /// True when the block contains a tail call. This allows the IRTranslator to
+  /// stop translating such blocks early.
+  bool HasTailCall = false;
 
   /// Switch analysis and optimization.
   class GISelSwitchLowering : public SwitchCG::SwitchLowering {

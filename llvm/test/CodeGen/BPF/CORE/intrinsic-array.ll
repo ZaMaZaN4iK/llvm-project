@@ -14,7 +14,7 @@
 define dso_local i32 @test(%struct.s* %arg) local_unnamed_addr #0 !dbg !7 {
 entry:
   call void @llvm.dbg.value(metadata %struct.s* %arg, metadata !17, metadata !DIExpression()), !dbg !18
-  %0 = tail call %struct.s* @llvm.preserve.array.access.index.p0s_struct.ss.p0s_struct.ss(%struct.s* %arg, i32 0, i32 2), !dbg !19
+  %0 = tail call %struct.s* @llvm.preserve.array.access.index.p0s_struct.ss.p0s_struct.ss(%struct.s* %arg, i32 0, i32 2), !dbg !19, !llvm.preserve.access.index !11
   %1 = tail call i32* @llvm.preserve.struct.access.index.p0i32.p0s_struct.ss(%struct.s* %0, i32 1, i32 1), !dbg !19, !llvm.preserve.access.index !12
   %2 = bitcast i32* %1 to i8*, !dbg !19
   %call = tail call i32 @get_value(i8* %2) #4, !dbg !20
@@ -28,12 +28,13 @@ entry:
 ; CHECK:       exit
 ;
 ; CHECK:      .section        .BTF.ext,"",@progbits
-; CHECK:      .long   12                      # OffsetReloc
-; CHECK-NEXT: .long   20                      # Offset reloc section string offset=20
+; CHECK:      .long   16                      # FieldReloc
+; CHECK-NEXT: .long   20                      # Field reloc section string offset=20
 ; CHECK-NEXT: .long   1
 ; CHECK-NEXT: .long   [[RELOC]]
 ; CHECK-NEXT: .long   2
 ; CHECK-NEXT: .long   26
+; CHECK-NEXT: .long   0
 
 declare dso_local i32 @get_value(i8*) local_unnamed_addr #1
 

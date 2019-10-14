@@ -149,6 +149,7 @@ static void BackgroundThread(void *arg) {
   // We don't use ScopedIgnoreInterceptors, because we want ignores to be
   // enabled even when the thread function exits (e.g. during pthread thread
   // shutdown code).
+  cur_thread_init();
   cur_thread()->ignore_interceptors++;
   const u64 kMs2Ns = 1000 * 1000;
 
@@ -237,6 +238,15 @@ static void StopBackgroundThread() {
 void DontNeedShadowFor(uptr addr, uptr size) {
   ReleaseMemoryPagesToOS(MemToShadow(addr), MemToShadow(addr + size));
 }
+
+#if !SANITIZER_GO
+void UnmapShadow(ThreadState *thr, uptr addr, uptr size) {
+  if (size == 0) return;
+  DontNeedShadowFor(addr, size);
+  ScopedGlobalProcessor sgp;
+  ctx->metamap.ResetRange(thr->proc(), addr, size);
+}
+#endif
 
 void MapShadow(uptr addr, uptr size) {
   // Global data is not 64K aligned, but there are no adjacent mappings,
@@ -328,7 +338,7 @@ static void CheckShadowMapping() {
 #if !SANITIZER_GO
 static void OnStackUnwind(const SignalContext &sig, const void *,
                           BufferedStackTrace *stack) {
-  stack->Unwind(sig.pc, sig.bp, sig.context,
+  stack->Unwind(StackTrace::GetNextInstructionPc(sig.pc), sig.bp, sig.context,
                 common_flags()->fast_unwind_on_fatal);
 }
 
@@ -984,6 +994,14 @@ void MemoryRangeImitateWrite(ThreadState *thr, uptr pc, uptr addr, uptr size) {
   s.SetWrite(true);
   s.SetAddr0AndSizeLog(0, 3);
   MemoryRangeSet(thr, pc, addr, size, s.raw());
+}
+
+void MemoryRangeImitateWriteOrResetRange(ThreadState *thr, uptr pc, uptr addr,
+                                         uptr size) {
+  if (thr->ignore_reads_and_writes == 0)
+    MemoryRangeImitateWrite(thr, pc, addr, size);
+  else
+    MemoryResetRange(thr, pc, addr, size);
 }
 
 ALWAYS_INLINE USED

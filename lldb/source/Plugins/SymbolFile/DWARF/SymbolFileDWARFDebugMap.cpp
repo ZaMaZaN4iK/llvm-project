@@ -41,7 +41,7 @@ using namespace lldb_private;
 
 // Subclass lldb_private::Module so we can intercept the
 // "Module::GetObjectFile()" (so we can fixup the object file sections) and
-// also for "Module::GetSymbolVendor()" (so we can fixup the symbol file id.
+// also for "Module::GetSymbolFile()" (so we can fixup the symbol file id.
 
 const SymbolFileDWARFDebugMap::FileRangeMap &
 SymbolFileDWARFDebugMap::CompileUnitInfo::GetFileRangeMap(
@@ -173,12 +173,12 @@ public:
 
   ~DebugMapModule() override = default;
 
-  SymbolVendor *
-  GetSymbolVendor(bool can_create = true,
-                  lldb_private::Stream *feedback_strm = nullptr) override {
+  SymbolFile *
+  GetSymbolFile(bool can_create = true,
+                lldb_private::Stream *feedback_strm = nullptr) override {
     // Scope for locker
     if (m_symfile_up.get() || !can_create)
-      return m_symfile_up.get();
+      return m_symfile_up ? m_symfile_up->GetSymbolFile() : nullptr;
 
     ModuleSP exe_module_sp(m_exe_module_wp.lock());
     if (exe_module_sp) {
@@ -186,30 +186,28 @@ public:
       ObjectFile *oso_objfile = GetObjectFile();
       if (oso_objfile) {
         std::lock_guard<std::recursive_mutex> guard(m_mutex);
-        SymbolVendor *symbol_vendor =
-            Module::GetSymbolVendor(can_create, feedback_strm);
-        if (symbol_vendor) {
+        if (SymbolFile *symfile =
+                Module::GetSymbolFile(can_create, feedback_strm)) {
           // Set a pointer to this class to set our OSO DWARF file know that
           // the DWARF is being used along with a debug map and that it will
           // have the remapped sections that we do below.
           SymbolFileDWARF *oso_symfile =
-              SymbolFileDWARFDebugMap::GetSymbolFileAsSymbolFileDWARF(
-                  symbol_vendor->GetSymbolFile());
+              SymbolFileDWARFDebugMap::GetSymbolFileAsSymbolFileDWARF(symfile);
 
           if (!oso_symfile)
             return nullptr;
 
           ObjectFile *exe_objfile = exe_module_sp->GetObjectFile();
-          SymbolVendor *exe_sym_vendor = exe_module_sp->GetSymbolVendor();
+          SymbolFile *exe_symfile = exe_module_sp->GetSymbolFile();
 
-          if (exe_objfile && exe_sym_vendor) {
+          if (exe_objfile && exe_symfile) {
             oso_symfile->SetDebugMapModule(exe_module_sp);
             // Set the ID of the symbol file DWARF to the index of the OSO
             // shifted left by 32 bits to provide a unique prefix for any
             // UserID's that get created in the symbol file.
             oso_symfile->SetID(((uint64_t)m_cu_idx + 1ull) << 32ull);
           }
-          return symbol_vendor;
+          return symfile;
         }
       }
     }
@@ -420,7 +418,11 @@ Module *SymbolFileDWARFDebugMap::GetModuleByCompUnitInfo(
         // than the one from the CU.
         auto oso_mod_time = std::chrono::time_point_cast<std::chrono::seconds>(
             FileSystem::Instance().GetModificationTime(oso_file));
-        if (oso_mod_time != comp_unit_info->oso_mod_time) {
+        // A timestamp of 0 means that the linker was in deterministic mode. In
+        // that case, we should skip the check against the filesystem last
+        // modification timestamp, since it will never match.
+        if (comp_unit_info->oso_mod_time != llvm::sys::TimePoint<>() &&
+            oso_mod_time != comp_unit_info->oso_mod_time) {
           obj_file->GetModule()->ReportError(
               "debug map object file '%s' has changed (actual time is "
               "%s, debug map time is %s"
@@ -533,12 +535,8 @@ SymbolFileDWARFDebugMap::GetSymbolFileAsSymbolFileDWARF(SymbolFile *sym_file) {
 
 SymbolFileDWARF *SymbolFileDWARFDebugMap::GetSymbolFileByCompUnitInfo(
     CompileUnitInfo *comp_unit_info) {
-  Module *oso_module = GetModuleByCompUnitInfo(comp_unit_info);
-  if (oso_module) {
-    SymbolVendor *sym_vendor = oso_module->GetSymbolVendor();
-    if (sym_vendor)
-      return GetSymbolFileAsSymbolFileDWARF(sym_vendor->GetSymbolFile());
-  }
+  if (Module *oso_module = GetModuleByCompUnitInfo(comp_unit_info))
+    return GetSymbolFileAsSymbolFileDWARF(oso_module->GetSymbolFile());
   return nullptr;
 }
 
@@ -652,6 +650,14 @@ bool SymbolFileDWARFDebugMap::ParseDebugMacros(CompileUnit &comp_unit) {
   if (oso_dwarf)
     return oso_dwarf->ParseDebugMacros(comp_unit);
   return false;
+}
+
+void SymbolFileDWARFDebugMap::ForEachExternalModule(
+    CompileUnit &comp_unit, llvm::function_ref<void(ModuleSP)> f) {
+  std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
+  SymbolFileDWARF *oso_dwarf = GetSymbolFile(comp_unit);
+  if (oso_dwarf)
+    oso_dwarf->ForEachExternalModule(comp_unit, f);
 }
 
 bool SymbolFileDWARFDebugMap::ParseSupportFiles(CompileUnit &comp_unit,
@@ -776,7 +782,7 @@ SymbolFileDWARFDebugMap::ResolveSymbolContext(const Address &exe_so_addr,
             Address oso_so_addr;
             if (oso_module->ResolveFileAddress(oso_file_addr, oso_so_addr)) {
               resolved_flags |=
-                  oso_module->GetSymbolVendor()->ResolveSymbolContext(
+                  oso_module->GetSymbolFile()->ResolveSymbolContext(
                       oso_so_addr, resolve_scope, sc);
             }
           }
@@ -1064,16 +1070,15 @@ uint32_t SymbolFileDWARFDebugMap::FindFunctions(const RegularExpression &regex,
   return sc_list.GetSize() - initial_size;
 }
 
-size_t SymbolFileDWARFDebugMap::GetTypes(SymbolContextScope *sc_scope,
-                                         lldb::TypeClass type_mask,
-                                         TypeList &type_list) {
+void SymbolFileDWARFDebugMap::GetTypes(SymbolContextScope *sc_scope,
+                                       lldb::TypeClass type_mask,
+                                       TypeList &type_list) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
   static Timer::Category func_cat(LLVM_PRETTY_FUNCTION);
   Timer scoped_timer(func_cat,
                      "SymbolFileDWARFDebugMap::GetTypes (type_mask = 0x%8.8x)",
                      type_mask);
 
-  uint32_t initial_size = type_list.GetSize();
   SymbolFileDWARF *oso_dwarf = nullptr;
   if (sc_scope) {
     SymbolContext sc;
@@ -1091,7 +1096,6 @@ size_t SymbolFileDWARFDebugMap::GetTypes(SymbolContextScope *sc_scope,
       return false;
     });
   }
-  return type_list.GetSize() - initial_size;
 }
 
 std::vector<lldb_private::CallEdge>
@@ -1193,24 +1197,17 @@ TypeSP SymbolFileDWARFDebugMap::FindCompleteObjCDefinitionTypeForDIE(
   return TypeSP();
 }
 
-uint32_t SymbolFileDWARFDebugMap::FindTypes(
+void SymbolFileDWARFDebugMap::FindTypes(
     ConstString name, const CompilerDeclContext *parent_decl_ctx,
-    bool append, uint32_t max_matches,
+    uint32_t max_matches,
     llvm::DenseSet<lldb_private::SymbolFile *> &searched_symbol_files,
     TypeMap &types) {
   std::lock_guard<std::recursive_mutex> guard(GetModuleMutex());
-  if (!append)
-    types.Clear();
-
-  const uint32_t initial_types_size = types.GetSize();
-
   ForEachSymbolFile([&](SymbolFileDWARF *oso_dwarf) -> bool {
-    oso_dwarf->FindTypes(name, parent_decl_ctx, append, max_matches,
+    oso_dwarf->FindTypes(name, parent_decl_ctx, max_matches,
                          searched_symbol_files, types);
     return types.GetSize() >= max_matches;
   });
-
-  return types.GetSize() - initial_types_size;
 }
 
 //
@@ -1405,8 +1402,8 @@ bool SymbolFileDWARFDebugMap::LinkOSOAddress(Address &addr) {
   if (addr_module == exe_module)
     return true; // Address is already in terms of the main executable module
 
-  CompileUnitInfo *cu_info = GetCompileUnitInfo(GetSymbolFileAsSymbolFileDWARF(
-      addr_module->GetSymbolVendor()->GetSymbolFile()));
+  CompileUnitInfo *cu_info = GetCompileUnitInfo(
+      GetSymbolFileAsSymbolFileDWARF(addr_module->GetSymbolFile()));
   if (cu_info) {
     const lldb::addr_t oso_file_addr = addr.GetFileAddress();
     const FileRangeMap::Entry *oso_range_entry =
