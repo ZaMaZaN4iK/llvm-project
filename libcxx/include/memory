@@ -5252,7 +5252,7 @@ _LIBCPP_FUNC_VIS void* align(size_t __align, size_t __sz, void*& __ptr, size_t& 
 
 // --- Helper for container swap --
 template <typename _Alloc>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void __swap_allocator(_Alloc & __a1, _Alloc & __a2)
 #if _LIBCPP_STD_VER >= 14
     _NOEXCEPT
@@ -5265,7 +5265,7 @@ void __swap_allocator(_Alloc & __a1, _Alloc & __a2)
 }
 
 template <typename _Alloc>
-_LIBCPP_INLINE_VISIBILITY
+_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void __swap_allocator(_Alloc & __a1, _Alloc & __a2, true_type)
 #if _LIBCPP_STD_VER >= 14
     _NOEXCEPT
@@ -5278,7 +5278,7 @@ void __swap_allocator(_Alloc & __a1, _Alloc & __a2, true_type)
 }
 
 template <typename _Alloc>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void __swap_allocator(_Alloc &, _Alloc &, false_type) _NOEXCEPT {}
 
 template <typename _Alloc, typename _Traits=allocator_traits<_Alloc> >
