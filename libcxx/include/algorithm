@@ -4823,6 +4823,7 @@ is_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // push_heap
 
 template <class _Compare, class _RandomAccessIterator>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __sift_up(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
           typename iterator_traits<_RandomAccessIterator>::difference_type __len)
@@ -4850,7 +4851,7 @@ __sift_up(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
@@ -4859,7 +4860,7 @@ push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
@@ -4869,6 +4870,7 @@ push_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // pop_heap
 
 template <class _Compare, class _RandomAccessIterator>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __sift_down(_RandomAccessIterator __first, _RandomAccessIterator /*__last*/,
             _Compare __comp,
@@ -4924,7 +4926,7 @@ __sift_down(_RandomAccessIterator __first, _RandomAccessIterator /*__last*/,
 }
 
 template <class _Compare, class _RandomAccessIterator>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp,
            typename iterator_traits<_RandomAccessIterator>::difference_type __len)
@@ -4937,7 +4939,7 @@ __pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
@@ -4946,7 +4948,7 @@ pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare _
 }
 
 template <class _RandomAccessIterator>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {
@@ -4956,6 +4958,7 @@ pop_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 // make_heap
 
 template <class _Compare, class _RandomAccessIterator>
+_LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 __make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
@@ -4972,7 +4975,7 @@ __make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compar
 }
 
 template <class _RandomAccessIterator, class _Compare>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp)
 {
@@ -4981,7 +4984,7 @@ make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare 
 }
 
 template <class _RandomAccessIterator>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 make_heap(_RandomAccessIterator __first, _RandomAccessIterator __last)
 {

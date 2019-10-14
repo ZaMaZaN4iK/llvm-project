@@ -30,42 +30,42 @@ protected:
     container_type c;
 
 public:
-    queue() = default;
-    ~queue() = default;
+    constexpr queue() = default;
+    constexpr ~queue() = default;
 
-    queue(const queue& q) = default;
-    queue(queue&& q) = default;
+    constexpr queue(const queue& q) = default;
+    constexpr queue(queue&& q) = default;
 
-    queue& operator=(const queue& q) = default;
-    queue& operator=(queue&& q) = default;
+    constexpr queue& operator=(const queue& q) = default;
+    constexpr queue& operator=(queue&& q) = default;
 
-    explicit queue(const container_type& c);
-    explicit queue(container_type&& c)
+    constexpr explicit queue(const container_type& c);
+    constexpr explicit queue(container_type&& c)
     template <class Alloc>
-        explicit queue(const Alloc& a);
+        constexpr explicit queue(const Alloc& a);
     template <class Alloc>
-        queue(const container_type& c, const Alloc& a);
+        constexpr queue(const container_type& c, const Alloc& a);
     template <class Alloc>
-        queue(container_type&& c, const Alloc& a);
+        constexpr queue(container_type&& c, const Alloc& a);
     template <class Alloc>
-        queue(const queue& q, const Alloc& a);
+        constexpr queue(const queue& q, const Alloc& a);
     template <class Alloc>
-        queue(queue&& q, const Alloc& a);
+        constexpr queue(queue&& q, const Alloc& a);
 
-    bool      empty() const;
-    size_type size() const;
+    constexpr bool      empty() const;
+    constexpr size_type size() const;
 
-    reference       front();
-    const_reference front() const;
-    reference       back();
-    const_reference back() const;
+    constexpr reference       front();
+    constexpr const_reference front() const;
+    constexpr reference       back();
+    constexpr const_reference back() const;
 
-    void push(const value_type& v);
-    void push(value_type&& v);
-    template <class... Args> reference emplace(Args&&... args); // reference in C++17
-    void pop();
+    constexpr void push(const value_type& v);
+    constexpr void push(value_type&& v);
+    template <class... Args> constexpr reference emplace(Args&&... args); // reference in C++17
+    constexpr void pop();
 
-    void swap(queue& q) noexcept(is_nothrow_swappable_v<Container>)
+    constexpr void swap(queue& q) noexcept(is_nothrow_swappable_v<Container>)
 };
 
 template<class Container>
@@ -75,25 +75,25 @@ template<class Container, class Allocator>
   queue(Container, Allocator) -> queue<typename Container::value_type, Container>; // C++17
 
 template <class T, class Container>
-  bool operator==(const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator==(const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  bool operator< (const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator< (const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  bool operator!=(const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator!=(const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  bool operator> (const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator> (const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  bool operator>=(const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator>=(const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  bool operator<=(const queue<T, Container>& x,const queue<T, Container>& y);
+  constexpr bool operator<=(const queue<T, Container>& x,const queue<T, Container>& y);
 
 template <class T, class Container>
-  void swap(queue<T, Container>& x, queue<T, Container>& y)
+  constexpr void swap(queue<T, Container>& x, queue<T, Container>& y)
   noexcept(noexcept(x.swap(y)));
 
 template <class T, class Container = vector<T>,
@@ -112,52 +112,52 @@ protected:
     Compare comp;
 
 public:
-    priority_queue() = default;
-    ~priority_queue() = default;
+    constexpr priority_queue() = default;
+    constexpr ~priority_queue() = default;
 
-    priority_queue(const priority_queue& q) = default;
-    priority_queue(priority_queue&& q) = default;
+    constexpr priority_queue(const priority_queue& q) = default;
+    constexpr priority_queue(priority_queue&& q) = default;
 
-    priority_queue& operator=(const priority_queue& q) = default;
-    priority_queue& operator=(priority_queue&& q) = default;
+    constexpr priority_queue& operator=(const priority_queue& q) = default;
+    constexpr priority_queue& operator=(priority_queue&& q) = default;
 
-    explicit priority_queue(const Compare& comp);
-    priority_queue(const Compare& comp, const container_type& c);
-    explicit priority_queue(const Compare& comp, container_type&& c);
+    constexpr explicit priority_queue(const Compare& comp);
+    constexpr priority_queue(const Compare& comp, const container_type& c);
+    constexpr explicit priority_queue(const Compare& comp, container_type&& c);
     template <class InputIterator>
-        priority_queue(InputIterator first, InputIterator last,
-                       const Compare& comp = Compare());
+        constexpr priority_queue(InputIterator first, InputIterator last,
+                                 const Compare& comp = Compare());
     template <class InputIterator>
-        priority_queue(InputIterator first, InputIterator last,
-                       const Compare& comp, const container_type& c);
+        constexpr priority_queue(InputIterator first, InputIterator last,
+                                 const Compare& comp, const container_type& c);
     template <class InputIterator>
-        priority_queue(InputIterator first, InputIterator last,
-                       const Compare& comp, container_type&& c);
+        constexpr priority_queue(InputIterator first, InputIterator last,
+                                 const Compare& comp, container_type&& c);
     template <class Alloc>
-        explicit priority_queue(const Alloc& a);
+        constexpr explicit priority_queue(const Alloc& a);
     template <class Alloc>
-        priority_queue(const Compare& comp, const Alloc& a);
+        constexpr priority_queue(const Compare& comp, const Alloc& a);
     template <class Alloc>
-        priority_queue(const Compare& comp, const container_type& c,
+        constexpr priority_queue(const Compare& comp, const container_type& c,
                        const Alloc& a);
     template <class Alloc>
-        priority_queue(const Compare& comp, container_type&& c,
+        constexpr priority_queue(const Compare& comp, container_type&& c,
                        const Alloc& a);
     template <class Alloc>
-        priority_queue(const priority_queue& q, const Alloc& a);
+        constexpr priority_queue(const priority_queue& q, const Alloc& a);
     template <class Alloc>
-        priority_queue(priority_queue&& q, const Alloc& a);
+        constexpr priority_queue(priority_queue&& q, const Alloc& a);
 
-    bool            empty() const;
-    size_type       size() const;
-    const_reference top() const;
+    constexpr bool            empty() const;
+    constexpr size_type       size() const;
+    constexpr const_reference top() const;
 
-    void push(const value_type& v);
-    void push(value_type&& v);
-    template <class... Args> void emplace(Args&&... args);
-    void pop();
+    constexpr void push(const value_type& v);
+    constexpr void push(value_type&& v);
+    template <class... Args> constexpr void emplace(Args&&... args);
+    constexpr void pop();
 
-    void swap(priority_queue& q)
+    constexpr void swap(priority_queue& q)
         noexcept(is_nothrow_swappable_v<Container> &&
                  is_nothrow_swappable_v<Comp>)
 };
@@ -177,7 +177,7 @@ priority_queue(Compare, Container, Allocator)
     -> priority_queue<typename Container::value_type, Container, Compare>; // C++17
 
 template <class T, class Container, class Compare>
-  void swap(priority_queue<T, Container, Compare>& x,
+  constexpr void swap(priority_queue<T, Container, Compare>& x,
             priority_queue<T, Container, Compare>& y)
             noexcept(noexcept(x.swap(y)));
 
@@ -200,12 +200,12 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 template <class _Tp, class _Container = deque<_Tp> > class _LIBCPP_TEMPLATE_VIS queue;
 
 template <class _Tp, class _Container>
-_LIBCPP_INLINE_VISIBILITY
+_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator==(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y);
 
 template <class _Tp, class _Container>
-_LIBCPP_INLINE_VISIBILITY
+_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator< (const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y);
 
@@ -224,62 +224,62 @@ protected:
     container_type c;
 
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     queue()
         _NOEXCEPT_(is_nothrow_default_constructible<container_type>::value)
         : c() {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     queue(const queue& __q) : c(__q.c) {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     queue& operator=(const queue& __q) {c = __q.c; return *this;}
 
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     queue(queue&& __q)
         _NOEXCEPT_(is_nothrow_move_constructible<container_type>::value)
         : c(_VSTD::move(__q.c)) {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     queue& operator=(queue&& __q)
         _NOEXCEPT_(is_nothrow_move_assignable<container_type>::value)
         {c = _VSTD::move(__q.c); return *this;}
 #endif  // _LIBCPP_CXX03_LANG
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit queue(const container_type& __c)  : c(__c) {}
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit queue(container_type&& __c) : c(_VSTD::move(__c)) {}
 #endif  // _LIBCPP_CXX03_LANG
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         explicit queue(const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0)
             : c(__a) {}
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         queue(const queue& __q, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0)
             : c(__q.c, __a) {}
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         queue(const container_type& __c, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0)
             : c(__c, __a) {}
 #ifndef _LIBCPP_CXX03_LANG
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         queue(container_type&& __c, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0)
             : c(_VSTD::move(__c), __a) {}
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         queue(queue&& __q, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0)
@@ -287,27 +287,27 @@ public:
 
 #endif  // _LIBCPP_CXX03_LANG
 
-    _LIBCPP_NODISCARD_AFTER_CXX17 _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NODISCARD_AFTER_CXX17 _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool      empty() const {return c.empty();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     size_type size() const  {return c.size();}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     reference       front()       {return c.front();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     const_reference front() const {return c.front();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     reference       back()        {return c.back();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     const_reference back() const  {return c.back();}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void push(const value_type& __v) {c.push_back(__v);}
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void push(value_type&& __v)      {c.push_back(_VSTD::move(__v));}
     template <class... _Args>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 #if _LIBCPP_STD_VER > 14
         decltype(auto) emplace(_Args&&... __args)
             { return c.emplace_back(_VSTD::forward<_Args>(__args)...);}
@@ -316,10 +316,10 @@ public:
             {        c.emplace_back(_VSTD::forward<_Args>(__args)...);}
 #endif
 #endif  // _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void pop() {c.pop_front();}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void swap(queue& __q)
         _NOEXCEPT_(__is_nothrow_swappable<container_type>::value)
     {
@@ -329,13 +329,13 @@ public:
 
     template <class _T1, class _C1>
     friend
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool
     operator==(const queue<_T1, _C1>& __x,const queue<_T1, _C1>& __y);
 
     template <class _T1, class _C1>
     friend
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool
     operator< (const queue<_T1, _C1>& __x,const queue<_T1, _C1>& __y);
 };
@@ -357,7 +357,7 @@ queue(_Container, _Alloc)
 #endif
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator==(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -365,7 +365,7 @@ operator==(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator< (const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -373,7 +373,7 @@ operator< (const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator!=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -381,7 +381,7 @@ operator!=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator> (const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -389,7 +389,7 @@ operator> (const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator>=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -397,7 +397,7 @@ operator>=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 bool
 operator<=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 {
@@ -405,7 +405,7 @@ operator<=(const queue<_Tp, _Container>& __x,const queue<_Tp, _Container>& __y)
 }
 
 template <class _Tp, class _Container>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 typename enable_if<
     __is_swappable<_Container>::value,
     void
@@ -440,111 +440,111 @@ protected:
     value_compare comp;
 
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue()
         _NOEXCEPT_(is_nothrow_default_constructible<container_type>::value &&
                    is_nothrow_default_constructible<value_compare>::value)
         : c(), comp() {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue(const priority_queue& __q) : c(__q.c), comp(__q.comp) {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue& operator=(const priority_queue& __q)
         {c = __q.c; comp = __q.comp; return *this;}
 
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue(priority_queue&& __q)
         _NOEXCEPT_(is_nothrow_move_constructible<container_type>::value &&
                    is_nothrow_move_constructible<value_compare>::value)
         : c(_VSTD::move(__q.c)), comp(_VSTD::move(__q.comp)) {}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue& operator=(priority_queue&& __q)
         _NOEXCEPT_(is_nothrow_move_assignable<container_type>::value &&
                    is_nothrow_move_assignable<value_compare>::value)
         {c = _VSTD::move(__q.c); comp = _VSTD::move(__q.comp); return *this;}
 #endif  // _LIBCPP_CXX03_LANG
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit priority_queue(const value_compare& __comp)
         : c(), comp(__comp) {}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     priority_queue(const value_compare& __comp, const container_type& __c);
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     explicit priority_queue(const value_compare& __comp, container_type&& __c);
 #endif
     template <class _InputIter>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(_InputIter __f, _InputIter __l,
                        const value_compare& __comp = value_compare());
     template <class _InputIter>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(_InputIter __f, _InputIter __l,
                        const value_compare& __comp, const container_type& __c);
 #ifndef _LIBCPP_CXX03_LANG
     template <class _InputIter>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(_InputIter __f, _InputIter __l,
                        const value_compare& __comp, container_type&& __c);
 #endif  // _LIBCPP_CXX03_LANG
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         explicit priority_queue(const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(const value_compare& __comp, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(const value_compare& __comp, const container_type& __c,
                        const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(const priority_queue& __q, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
 #ifndef _LIBCPP_CXX03_LANG
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(const value_compare& __comp, container_type&& __c,
                        const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
     template <class _Alloc>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
         priority_queue(priority_queue&& __q, const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type* = 0);
 #endif  // _LIBCPP_CXX03_LANG
 
-    _LIBCPP_NODISCARD_AFTER_CXX17 _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NODISCARD_AFTER_CXX17 _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     bool            empty() const {return c.empty();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     size_type       size() const  {return c.size();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     const_reference top() const   {return c.front();}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void push(const value_type& __v);
 #ifndef _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void push(value_type&& __v);
     template <class... _Args>
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void emplace(_Args&&... __args);
 #endif  // _LIBCPP_CXX03_LANG
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void pop();
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
     void swap(priority_queue& __q)
         _NOEXCEPT_(__is_nothrow_swappable<container_type>::value &&
                    __is_nothrow_swappable<value_compare>::value);
@@ -581,7 +581,7 @@ priority_queue(_Compare, _Container, _Alloc)
 #endif
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const _Compare& __comp,
                                                           const container_type& __c)
     : c(__c),
@@ -593,7 +593,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const _Compare& __comp
 #ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& __comp,
                                                           container_type&& __c)
     : c(_VSTD::move(__c)),
@@ -606,7 +606,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& _
 
 template <class _Tp, class _Container, class _Compare>
 template <class _InputIter>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _InputIter __l,
                                                           const value_compare& __comp)
     : c(__f, __l),
@@ -617,7 +617,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _Input
 
 template <class _Tp, class _Container, class _Compare>
 template <class _InputIter>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _InputIter __l,
                                                           const value_compare& __comp,
                                                           const container_type& __c)
@@ -632,7 +632,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _Input
 
 template <class _Tp, class _Container, class _Compare>
 template <class _InputIter>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _InputIter __l,
                                                           const value_compare& __comp,
                                                           container_type&& __c)
@@ -647,7 +647,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(_InputIter __f, _Input
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
                                                          _Alloc>::value>::type*)
@@ -657,7 +657,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const _Alloc& __a,
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& __comp,
                                                           const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
@@ -669,7 +669,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& _
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& __comp,
                                                           const container_type& __c,
                                                           const _Alloc& __a,
@@ -683,7 +683,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& _
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const priority_queue& __q,
                                                           const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
@@ -698,7 +698,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const priority_queue& 
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& __comp,
                                                           container_type&& __c,
                                                           const _Alloc& __a,
@@ -712,7 +712,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(const value_compare& _
 
 template <class _Tp, class _Container, class _Compare>
 template <class _Alloc>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 priority_queue<_Tp, _Container, _Compare>::priority_queue(priority_queue&& __q,
                                                           const _Alloc& __a,
                        typename enable_if<uses_allocator<container_type,
@@ -726,7 +726,7 @@ priority_queue<_Tp, _Container, _Compare>::priority_queue(priority_queue&& __q,
 #endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 priority_queue<_Tp, _Container, _Compare>::push(const value_type& __v)
 {
@@ -737,7 +737,7 @@ priority_queue<_Tp, _Container, _Compare>::push(const value_type& __v)
 #ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 priority_queue<_Tp, _Container, _Compare>::push(value_type&& __v)
 {
@@ -747,7 +747,7 @@ priority_queue<_Tp, _Container, _Compare>::push(value_type&& __v)
 
 template <class _Tp, class _Container, class _Compare>
 template <class... _Args>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 priority_queue<_Tp, _Container, _Compare>::emplace(_Args&&... __args)
 {
@@ -758,7 +758,7 @@ priority_queue<_Tp, _Container, _Compare>::emplace(_Args&&... __args)
 #endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 priority_queue<_Tp, _Container, _Compare>::pop()
 {
@@ -767,7 +767,7 @@ priority_queue<_Tp, _Container, _Compare>::pop()
 }
 
 template <class _Tp, class _Container, class _Compare>
-inline
+inline _LIBCPP_CONSTEXPR_AFTER_CXX17
 void
 priority_queue<_Tp, _Container, _Compare>::swap(priority_queue& __q)
         _NOEXCEPT_(__is_nothrow_swappable<container_type>::value &&
@@ -779,7 +779,7 @@ priority_queue<_Tp, _Container, _Compare>::swap(priority_queue& __q)
 }
 
 template <class _Tp, class _Container, class _Compare>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX17
 typename enable_if<
     __is_swappable<_Container>::value
     && __is_swappable<_Compare>::value,
